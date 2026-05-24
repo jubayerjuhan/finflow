@@ -28,9 +28,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Edit2, Wallet as WalletIcon, Tag, RefreshCcw } from 'lucide-react';
+import { Plus, Trash2, Edit2, Wallet as WalletIcon, Tag, RefreshCcw, Sun, Moon, Monitor } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { setTheme, ThemeMode } from '@/store/slices/themeSlice';
 
 const WALLET_ICONS = ['💵', '🏦', '📱', '💳', '💰', '🏧', '💎', '🪙'];
 const WALLET_COLORS = ['#22c55e', '#3b82f6', '#e91e8c', '#f97316', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const dispatch = useAppDispatch();
   const wallets = useAppSelector((s) => s.wallets.items);
   const categories = useAppSelector((s) => s.categories.items);
+  const currentTheme = useAppSelector((s) => (s as any).theme?.mode ?? 'system') as ThemeMode;
 
   const [walletDialog, setWalletDialog] = useState(false);
   const [categoryDialog, setCategoryDialog] = useState(false);
@@ -149,12 +151,15 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold">Settings</h1>
 
       <Tabs defaultValue="wallets">
-        <TabsList className="w-full grid grid-cols-3 rounded-xl h-10">
+        <TabsList className="w-full grid grid-cols-4 rounded-xl h-10">
           <TabsTrigger value="wallets" className="rounded-lg text-xs sm:text-sm">
-            <WalletIcon size={14} className="mr-1.5 flex-shrink-0" />Wallets
+            <WalletIcon size={14} className="mr-1 flex-shrink-0" />Wallets
           </TabsTrigger>
           <TabsTrigger value="categories" className="rounded-lg text-xs sm:text-sm">
-            <Tag size={14} className="mr-1.5 flex-shrink-0" />Categories
+            <Tag size={14} className="mr-1 flex-shrink-0" />Categories
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="rounded-lg text-xs sm:text-sm">
+            <Sun size={14} className="mr-1 flex-shrink-0" />Theme
           </TabsTrigger>
           <TabsTrigger value="data" className="rounded-lg text-xs sm:text-sm">Data</TabsTrigger>
         </TabsList>
@@ -231,6 +236,46 @@ export default function SettingsPage() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Appearance Tab */}
+        <TabsContent value="appearance" className="mt-4 space-y-4">
+          <Card className="border border-border">
+            <CardHeader>
+              <CardTitle className="text-sm">Appearance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-3">Color Theme</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {(
+                    [
+                      { mode: 'light' as ThemeMode, icon: Sun, label: 'Light', desc: 'Always light' },
+                      { mode: 'system' as ThemeMode, icon: Monitor, label: 'System', desc: 'Follow device' },
+                      { mode: 'dark' as ThemeMode, icon: Moon, label: 'Dark', desc: 'Always dark' },
+                    ] as const
+                  ).map(({ mode, icon: Icon, label, desc }) => (
+                    <button
+                      key={mode}
+                      onClick={() => dispatch(setTheme(mode))}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all',
+                        currentTheme === mode
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      )}
+                    >
+                      <Icon size={22} />
+                      <div className="text-center">
+                        <p className="text-xs font-semibold">{label}</p>
+                        <p className="text-[10px] opacity-70">{desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Data Tab */}

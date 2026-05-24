@@ -10,8 +10,13 @@ import {
   Target,
   Settings,
   Wallet,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setTheme, ThemeMode } from '@/store/slices/themeSlice';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,8 +27,16 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
+const themeOptions: { mode: ThemeMode; icon: React.ElementType; label: string }[] = [
+  { mode: 'light', icon: Sun, label: 'Light' },
+  { mode: 'system', icon: Monitor, label: 'System' },
+  { mode: 'dark', icon: Moon, label: 'Dark' },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const dispatch = useAppDispatch();
+  const currentMode = useAppSelector((s) => (s as any).theme?.mode ?? 'system') as ThemeMode;
 
   return (
     <aside className="hidden md:flex flex-col w-64 min-h-screen border-r border-border bg-background fixed left-0 top-0 bottom-0 z-40">
@@ -60,7 +73,26 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-border">
+      <div className="px-4 py-4 border-t border-border space-y-3">
+        {/* Theme toggle */}
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
+          {themeOptions.map(({ mode, icon: Icon, label }) => (
+            <button
+              key={mode}
+              onClick={() => dispatch(setTheme(mode))}
+              title={label}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                currentMode === mode
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Icon size={13} />
+              <span className="hidden lg:inline">{label}</span>
+            </button>
+          ))}
+        </div>
         <p className="text-xs text-muted-foreground">FinFlow v1.0</p>
       </div>
     </aside>

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
+import ThemeProvider from '@/components/providers/ThemeProvider';
 import { useAppDispatch } from '@/store/hooks';
 import { fetchWallets } from '@/store/slices/walletsSlice';
 import { fetchCategories } from '@/store/slices/categoriesSlice';
@@ -24,6 +25,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [dispatch]);
 
   return (
+    <ThemeProvider>
     <div className="min-h-screen bg-background">
       <Sidebar />
       <main className="md:pl-64 pb-24 md:pb-0 min-h-screen">
@@ -43,5 +45,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }}
       />
     </div>
+    </ThemeProvider>
   );
 }

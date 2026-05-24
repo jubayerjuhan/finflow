@@ -9,6 +9,17 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "FinFlow — Personal Finance",
   description: "Track your money with clarity",
+  // PWA manifest
+  manifest: "/manifest.json",
+  // iOS standalone mode (hides Safari address bar & navigation)
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FinFlow",
+  },
+  // Fallback for older Android / other browsers
+  applicationName: "FinFlow",
+  formatDetection: { telephone: false },
 };
 
 // Proper mobile viewport — enables safe-area-inset-* on iOS notched devices
@@ -17,6 +28,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
+  // Colours the browser chrome / status bar on Android Chrome
+  themeColor: "#3b82f6",
 };
 
 export default function RootLayout({

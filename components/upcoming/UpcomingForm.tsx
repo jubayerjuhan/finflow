@@ -13,6 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { format, addDays } from 'date-fns';
+import {
+  Calendar,
+  Repeat2,
+  StickyNote,
+  Wallet,
+  Tag,
+  DollarSign,
+  FileText,
+  CheckCircle2,
+} from 'lucide-react';
 
 export default function UpcomingForm() {
   const dispatch = useAppDispatch();
@@ -22,8 +32,6 @@ export default function UpcomingForm() {
   const categoriesLoading = useAppSelector((s) => s.categories.loading);
   const walletsLoading = useAppSelector((s) => s.wallets.loading);
 
-  // Ensure categories and wallets are loaded — AppShell fetches them but
-  // the async fetch may not have resolved by the time this page mounts.
   useEffect(() => {
     if (categories.length === 0) dispatch(fetchCategories());
     if (wallets.length === 0) dispatch(fetchWallets());
@@ -67,46 +75,63 @@ export default function UpcomingForm() {
     }
   };
 
+  const recurringOptions = [
+    { value: 'none', label: 'Once', icon: '1️⃣' },
+    { value: 'weekly', label: 'Weekly', icon: '📅' },
+    { value: 'monthly', label: 'Monthly', icon: '🗓️' },
+    { value: 'yearly', label: 'Yearly', icon: '📆' },
+  ] as const;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
+
       {/* Title */}
       <div className="space-y-1.5">
-        <Label>Title</Label>
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <FileText size={14} className="text-primary" /> Title
+        </Label>
         <Input
           placeholder="e.g. Internet Bill"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="rounded-xl"
+          className="rounded-xl h-11"
         />
       </div>
 
       {/* Amount */}
       <div className="space-y-1.5">
-        <Label>Amount (৳)</Label>
-        <Input
-          type="number"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="text-2xl font-bold h-14 text-center rounded-xl"
-          min="0"
-          step="0.01"
-        />
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <DollarSign size={14} className="text-primary" /> Amount (৳)
+        </Label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground select-none">৳</span>
+          <Input
+            type="number"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="text-2xl font-bold h-16 text-center rounded-xl pl-8 pr-4"
+            min="0"
+            step="0.01"
+          />
+        </div>
       </div>
 
       {/* Category */}
-      <div className="space-y-1.5">
-        <Label>
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <Tag size={14} className="text-primary" />
           Category
           {categoryId && (
-            <span className="ml-2 text-xs text-primary font-normal">
+            <span className="ml-2 text-xs text-primary font-normal flex items-center gap-1">
+              <CheckCircle2 size={11} />
               {filteredCategories.find((c) => c._id === categoryId)?.icon}{' '}
               {filteredCategories.find((c) => c._id === categoryId)?.name}
             </span>
           )}
         </Label>
         {categoriesLoading && filteredCategories.length === 0 ? (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
             ))}
@@ -114,21 +139,26 @@ export default function UpcomingForm() {
         ) : filteredCategories.length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">No categories found. Add one in Settings.</p>
         ) : (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {filteredCategories.map((cat) => (
               <button
                 key={cat._id}
                 type="button"
                 onClick={() => setCategoryId(cat._id)}
                 className={cn(
-                  'flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-medium',
+                  'flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-medium min-w-0',
                   categoryId === cat._id
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-primary/50'
                 )}
               >
-                <span className="text-xl">{cat.icon}</span>
-                <span className="truncate w-full text-center text-[10px]">{cat.name}</span>
+                <span
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                  style={{ backgroundColor: cat.color + '22' }}
+                >
+                  {cat.icon}
+                </span>
+                <span className="truncate w-full text-center text-[10px] leading-tight">{cat.name}</span>
               </button>
             ))}
           </div>
@@ -136,30 +166,40 @@ export default function UpcomingForm() {
       </div>
 
       {/* Wallet */}
-      <div className="space-y-1.5">
-        <Label>Pay from Wallet</Label>
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <Wallet size={14} className="text-primary" /> Pay from Wallet
+        </Label>
         {walletsLoading && wallets.length === 0 ? (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {wallets.map((w) => (
               <button
                 key={w._id}
                 type="button"
                 onClick={() => setWalletId(w._id)}
                 className={cn(
-                  'flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-medium',
+                  'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-xs font-medium min-w-0',
                   walletId === w._id
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-primary/50'
                 )}
               >
-                <span className="text-lg">{w.icon}</span>
-                <span className="truncate w-full text-center">{w.name}</span>
+                <span
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ backgroundColor: w.color + '22' }}
+                >
+                  {w.icon}
+                </span>
+                <div className="min-w-0 text-left">
+                  <p className="truncate font-semibold text-xs">{w.name}</p>
+                  <p className="text-muted-foreground text-[10px]">৳{w.balance.toLocaleString()}</p>
+                </div>
               </button>
             ))}
           </div>
@@ -168,32 +208,37 @@ export default function UpcomingForm() {
 
       {/* Due Date */}
       <div className="space-y-1.5">
-        <Label>Due Date</Label>
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <Calendar size={14} className="text-primary" /> Due Date
+        </Label>
         <Input
           type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          className="rounded-xl"
+          className="rounded-xl h-11"
         />
       </div>
 
       {/* Recurring */}
-      <div className="space-y-1.5">
-        <Label>Recurring</Label>
-        <div className="grid grid-cols-4 gap-2">
-          {(['none', 'weekly', 'monthly', 'yearly'] as const).map((r) => (
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <Repeat2 size={14} className="text-primary" /> Recurring
+        </Label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {recurringOptions.map((r) => (
             <button
-              key={r}
+              key={r.value}
               type="button"
-              onClick={() => setRecurring(r)}
+              onClick={() => setRecurring(r.value)}
               className={cn(
-                'py-2 px-1 rounded-xl border-2 text-xs font-medium capitalize transition-all',
-                recurring === r
+                'flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl border-2 text-xs font-medium transition-all',
+                recurring === r.value
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-border text-muted-foreground hover:border-primary/50'
               )}
             >
-              {r === 'none' ? 'Once' : r}
+              <span>{r.icon}</span>
+              <span>{r.label}</span>
             </button>
           ))}
         </div>
@@ -201,7 +246,10 @@ export default function UpcomingForm() {
 
       {/* Note */}
       <div className="space-y-1.5">
-        <Label>Note (optional)</Label>
+        <Label className="flex items-center gap-1.5 text-sm font-semibold">
+          <StickyNote size={14} className="text-primary" /> Note
+          <span className="font-normal text-muted-foreground">(optional)</span>
+        </Label>
         <Textarea
           placeholder="Any additional note..."
           value={note}
@@ -211,8 +259,14 @@ export default function UpcomingForm() {
         />
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold">
-        {loading ? 'Saving...' : 'Add Upcoming Expense'}
+      <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold gap-2">
+        {loading ? (
+          <>Saving...</>
+        ) : (
+          <>
+            <CheckCircle2 size={18} /> Add Upcoming Expense
+          </>
+        )}
       </Button>
     </form>
   );

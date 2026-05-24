@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     const categoryMap: Record<string, { category: string; icon: string; color: string; amount: number }> = {};
     upcomingExpenses.forEach((exp) => {
       const cat = exp.categoryId as any;
+      if (!cat || !cat._id) return; // skip if category was deleted
       const key = cat._id.toString();
       if (!categoryMap[key]) {
         categoryMap[key] = { category: cat.name, icon: cat.icon, color: cat.color, amount: 0 };
@@ -53,7 +54,9 @@ export async function GET(req: NextRequest) {
     // Projected balances per wallet
     const walletDeductions: Record<string, number> = {};
     upcomingExpenses.forEach((exp) => {
-      const walletId = (exp.walletId as any)._id.toString();
+      const wallet = exp.walletId as any;
+      if (!wallet || !wallet._id) return; // skip if wallet was deleted
+      const walletId = wallet._id.toString();
       walletDeductions[walletId] = (walletDeductions[walletId] || 0) + exp.amount;
     });
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import UpcomingExpense from '@/models/UpcomingExpense';
+import '@/models/Category';
+import '@/models/Wallet';
 
 export async function GET() {
   try {

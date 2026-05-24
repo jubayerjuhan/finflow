@@ -6,59 +6,152 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* ── Apple Frosted Glass ── */
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+  }
+
+  .glass-dark {
+    background: rgba(28, 28, 30, 0.78);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+  }
+
+  /* iOS ultra-thin material (nav bars) */
+  .glass-nav {
+    background: rgba(242, 242, 247, 0.82);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+  }
+
+  .dark .glass-nav {
+    background: rgba(18, 18, 20, 0.82);
+  }
+
+  /* Apple-style subtle inset shadow for inputs */
+  .input-apple {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Apple spring scale */
+  .tap-scale {
+    @apply active:scale-[0.97] transition-transform duration-150;
+  }
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* ── Apple Human Interface Colors — Light Mode ── */
+    --background: 240 14% 96%;        /* #F2F2F7  System Background */
+    --foreground: 0 0% 9%;            /* #171717  Label */
+
+    --card: 0 0% 100%;                /* #FFFFFF  Card / Grouped BG */
+    --card-foreground: 0 0% 9%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 211 100% 50%;          /* #007AFF  iOS Blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 90%;          /* #E5E5EA  Secondary Fill */
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 240 6% 93%;              /* #EFEFF4  Tertiary Fill */
+    --muted-foreground: 240 3% 57%;   /* #8E8E93  Secondary Label */
+
+    --accent: 211 100% 95%;
+    --accent-foreground: 211 100% 40%;
+
+    --destructive: 4 100% 59%;        /* #FF3B30  iOS Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 88%;             /* Separator */
+    --input: 240 5% 91%;              /* Input fill */
+    --ring: 211 100% 50%;             /* Focus ring = iOS Blue */
+
+    --radius: 1rem;                   /* 16px base radius */
+
+    /* Apple semantic */
+    --apple-green: 142 71% 45%;       /* #34C759 */
+    --apple-orange: 35 100% 50%;      /* #FF9500 */
+    --apple-red: 4 100% 59%;          /* #FF3B30 */
+    --apple-blue: 211 100% 50%;       /* #007AFF */
+    --apple-teal: 187 85% 43%;        /* #30B0C7 */
+    --apple-indigo: 239 84% 67%;      /* #5856D6 */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* ── Apple Human Interface Colors — Dark Mode ── */
+    --background: 0 0% 0%;            /* #000000  System Background */
+    --foreground: 0 0% 98%;           /* #FAFAFA  Label */
+
+    --card: 240 5% 11%;               /* #1C1C1E  Elevated Surface */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 4% 14%;            /* #242426 */
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 211 100% 62%;          /* Brighter blue in dark */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 17%;          /* #2C2C2E */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5% 17%;
+    --muted-foreground: 240 3% 57%;   /* #8E8E93 */
+
+    --accent: 211 100% 20%;
+    --accent-foreground: 211 100% 75%;
+
+    --destructive: 4 100% 62%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 4% 22%;             /* #3A3A3C  Separator */
+    --input: 240 5% 17%;
+    --ring: 211 100% 62%;
   }
 
   * {
     @apply border-border;
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+      "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Apple scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Smooth focus transitions */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.35);
+    border-radius: var(--radius);
   }
 }

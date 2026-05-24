@@ -64,7 +64,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     dispatch(fetchReportSummary({ startDate: dateRange.startDate, endDate: dateRange.endDate }));
-    dispatch(fetchUpcomingReport());
+    dispatch(fetchUpcomingReport({ startDate: dateRange.startDate, endDate: dateRange.endDate }));
   }, [dispatch, dateRange]);
 
   const applyDateRange = () => {

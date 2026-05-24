@@ -1,13 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import UpcomingExpense from '@/models/UpcomingExpense';
 import Wallet from '@/models/Wallet';
+import '@/models/Category';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
 
-    const upcomingExpenses = await UpcomingExpense.find({ status: 'pending' })
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // Build date filter for dueDate
+    const dateFilter: Record<string, any> = {};
+    if (startDate) dateFilter.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.$lte = end;
+    }
+
+    const query: Record<string, any> = { status: 'pending' };
+    if (Object.keys(dateFilter).length > 0) {
+      query.dueDate = dateFilter;
+    }
+
+    const upcomingExpenses = await UpcomingExpense.find(query)
       .populate('categoryId', 'name icon color')
       .populate('walletId', 'name icon color balance currency');
 

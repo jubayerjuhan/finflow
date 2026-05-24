@@ -48,8 +48,8 @@ export const fetchReportSummary = createAsyncThunk(
 
 export const fetchUpcomingReport = createAsyncThunk(
   'reports/fetchUpcoming',
-  async () => {
-    const res = await reportService.getUpcomingReport();
+  async (filters?: ReportFilters) => {
+    const res = await reportService.getUpcomingReport(filters);
     return res.data.data;
   }
 );

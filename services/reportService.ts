@@ -9,5 +9,6 @@ export interface ReportFilters {
 export const reportService = {
   getSummary: (filters?: ReportFilters) =>
     api.get('/reports/summary', { params: filters }),
-  getUpcomingReport: () => api.get('/reports/upcoming'),
+  getUpcomingReport: (filters?: ReportFilters) =>
+    api.get('/reports/upcoming', { params: filters }),
 };

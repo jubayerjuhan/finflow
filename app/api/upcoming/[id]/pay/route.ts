@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import UpcomingExpense from '@/models/UpcomingExpense';
 import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
+import '@/models/Category'; // register model so populate('categoryId') works
 
 export async function POST(
   req: NextRequest,

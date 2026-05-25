@@ -15,6 +15,6 @@ export const walletService = {
   update: (id: string, data: Partial<WalletPayload>) =>
     api.put(`/wallets/${id}`, data),
   delete: (id: string) => api.delete(`/wallets/${id}`),
-  transfer: (fromId: string, toId: string, amount: number, note?: string) =>
-    api.post('/wallets/transfer', { fromId, toId, amount, note }),
+  transfer: (fromId: string, toId: string, amount: number, note?: string, fee?: number) =>
+    api.post('/wallets/transfer', { fromId, toId, amount, note, fee }),
 };

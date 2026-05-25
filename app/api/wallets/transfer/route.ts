@@ -7,7 +7,7 @@ import Category from '@/models/Category';
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const { fromId, toId, amount, note } = await req.json();
+    const { fromId, toId, amount, note, fee = 0 } = await req.json();
 
     const fromWallet = await Wallet.findById(fromId);
     const toWallet = await Wallet.findById(toId);
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
     }
 
-    if (fromWallet.balance < amount) {
+    if (fromWallet.balance < amount + fee) {
       return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
     }
 
@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Deduct from source
-    fromWallet.balance -= amount;
+    // Deduct amount + fee from source
+    fromWallet.balance -= (amount + fee);
     await fromWallet.save();
 
-    // Add to destination
+    // Add only the amount to destination (fee stays with source)
     toWallet.balance += amount;
     await toWallet.save();
 
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       toWalletId: toId,
       type: 'transfer',
       amount,
+      fee: fee || 0,
       categoryId: transferCategory._id,
       date: new Date(),
       note: note || `Transfer to ${toWallet.name}`,

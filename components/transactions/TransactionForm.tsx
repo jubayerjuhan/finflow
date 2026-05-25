@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { createTransaction } from '@/store/slices/transactionsSlice';
-import { fetchWallets } from '@/store/slices/walletsSlice';
+import { fetchWallets, transferFunds } from '@/store/slices/walletsSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,16 +62,12 @@ export default function TransactionForm() {
           setLoading(false);
           return;
         }
-        const transferCat = categories.find((c) => c.name === 'Transfer');
         await dispatch(
-          createTransaction({
-            walletId,
-            toWalletId,
-            type: 'transfer',
+          transferFunds({
+            fromId: walletId,
+            toId: toWalletId,
             amount: parseFloat(amount),
             fee: parsedFee || undefined,
-            categoryId: transferCat?._id || categories[0]._id,
-            date,
             note,
           })
         ).unwrap();

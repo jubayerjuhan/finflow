@@ -62,13 +62,15 @@ export const transferFunds = createAsyncThunk(
     toId,
     amount,
     note,
+    fee,
   }: {
     fromId: string;
     toId: string;
     amount: number;
     note?: string;
+    fee?: number;
   }) => {
-    const res = await walletService.transfer(fromId, toId, amount, note);
+    const res = await walletService.transfer(fromId, toId, amount, note, fee);
     return res.data.data;
   }
 );

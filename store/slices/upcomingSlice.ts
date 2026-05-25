@@ -1,6 +1,13 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { upcomingService, UpcomingPayload } from '@/services/upcomingService';
 
+export interface Contribution {
+  _id: string;
+  amount: number;
+  date: string;
+  note?: string;
+}
+
 export interface UpcomingExpense {
   _id: string;
   title: string;
@@ -12,6 +19,7 @@ export interface UpcomingExpense {
   status: 'pending' | 'paid' | 'skipped';
   recurring: 'none' | 'weekly' | 'monthly' | 'yearly';
   paidTransactionId?: string;
+  contributions: Contribution[];
   createdAt: string;
 }
 
@@ -64,6 +72,22 @@ export const markUpcomingPaid = createAsyncThunk(
   }
 );
 
+export const addContribution = createAsyncThunk(
+  'upcoming/addContribution',
+  async ({ id, amount, note }: { id: string; amount: number; note?: string }) => {
+    const res = await upcomingService.addContribution(id, amount, note);
+    return res.data.data as UpcomingExpense;
+  }
+);
+
+export const removeContribution = createAsyncThunk(
+  'upcoming/removeContribution',
+  async ({ id, contributionId }: { id: string; contributionId: string }) => {
+    const res = await upcomingService.removeContribution(id, contributionId);
+    return res.data.data as UpcomingExpense;
+  }
+);
+
 const upcomingSlice = createSlice({
   name: 'upcoming',
   initialState,
@@ -97,6 +121,14 @@ const upcomingSlice = createSlice({
           (u) => u._id === action.payload.upcoming._id
         );
         if (idx !== -1) state.items[idx] = action.payload.upcoming;
+      })
+      .addCase(addContribution.fulfilled, (state, action) => {
+        const idx = state.items.findIndex((u) => u._id === action.payload._id);
+        if (idx !== -1) state.items[idx] = action.payload;
+      })
+      .addCase(removeContribution.fulfilled, (state, action) => {
+        const idx = state.items.findIndex((u) => u._id === action.payload._id);
+        if (idx !== -1) state.items[idx] = action.payload;
       });
   },
 });

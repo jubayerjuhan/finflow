@@ -7,14 +7,28 @@ import {
   markUpcomingPaid,
   updateUpcoming,
   deleteUpcoming,
+  addContribution,
+  removeContribution,
   UpcomingExpense,
 } from '@/store/slices/upcomingSlice';
 import { fetchWallets } from '@/store/slices/walletsSlice';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Plus, CheckCircle2, XCircle, Trash2, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+  Plus,
+  CheckCircle2,
+  XCircle,
+  Trash2,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  PiggyBank,
+  ChevronRight,
+  X,
+} from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -47,6 +61,10 @@ export default function UpcomingPage() {
   const skipped = items.filter((u) => u.status === 'skipped');
 
   const totalPending = pending.reduce((s, u) => s + u.amount, 0);
+  const totalSaved = pending.reduce(
+    (s, u) => s + (u.contributions || []).reduce((a, c) => a + c.amount, 0),
+    0
+  );
 
   // Category breakdown (pending only)
   const categoryBreakdown = useMemo(() => {
@@ -132,10 +150,50 @@ export default function UpcomingPage() {
     };
   }, [displayedItems, filterStatus]);
 
+  // ── Expense Card ──────────────────────────────────────────────────────────
   const ExpenseCard = ({ exp }: { exp: UpcomingExpense }) => {
     const daysLeft = differenceInDays(new Date(exp.dueDate), new Date());
     const isOverdue = daysLeft < 0;
     const isUrgent = daysLeft >= 0 && daysLeft <= 3;
+
+    const contributions = exp.contributions || [];
+    const savedAmount = contributions.reduce((s, c) => s + c.amount, 0);
+    const progressPct = exp.amount > 0 ? Math.min((savedAmount / exp.amount) * 100, 100) : 0;
+    const isFullySaved = savedAmount >= exp.amount;
+
+    // Local state for the "Add Funds" panel
+    const [showFunds, setShowFunds] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [fundAmount, setFundAmount] = useState('');
+    const [fundNote, setFundNote] = useState('');
+    const [fundLoading, setFundLoading] = useState(false);
+
+    const handleAddFund = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const amt = parseFloat(fundAmount);
+      if (!amt || amt <= 0) { toast.error('Enter a valid amount'); return; }
+      setFundLoading(true);
+      try {
+        await dispatch(addContribution({ id: exp._id, amount: amt, note: fundNote.trim() || undefined })).unwrap();
+        toast.success(`💰 Added ৳${amt.toLocaleString()} to "${exp.title}"`);
+        setFundAmount('');
+        setFundNote('');
+        setShowFunds(false);
+      } catch {
+        toast.error('Failed to add funds');
+      } finally {
+        setFundLoading(false);
+      }
+    };
+
+    const handleRemoveContribution = async (contributionId: string) => {
+      try {
+        await dispatch(removeContribution({ id: exp._id, contributionId })).unwrap();
+        toast.success('Removed');
+      } catch {
+        toast.error('Failed to remove');
+      }
+    };
 
     return (
       <Card
@@ -146,6 +204,7 @@ export default function UpcomingPage() {
         )}
       >
         <CardContent className="p-4">
+          {/* ── Main row ── */}
           <div className="flex items-start gap-3">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -201,6 +260,46 @@ export default function UpcomingPage() {
             </div>
           </div>
 
+          {/* ── Savings progress bar (pending only) ── */}
+          {exp.status === 'pending' && (
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <PiggyBank size={11} />
+                  Saved{' '}
+                  <span className={cn('font-semibold', isFullySaved ? 'text-emerald-500' : 'text-foreground')}>
+                    ৳{savedAmount.toLocaleString()}
+                  </span>
+                  {' '}of ৳{exp.amount.toLocaleString()}
+                </span>
+                <span
+                  className={cn(
+                    'font-semibold',
+                    isFullySaved ? 'text-emerald-500' : progressPct >= 50 ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {Math.round(progressPct)}%
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all duration-500',
+                    isFullySaved ? 'bg-emerald-500' : progressPct >= 50 ? 'bg-primary' : 'bg-amber-400'
+                  )}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              {isFullySaved && (
+                <p className="text-[11px] text-emerald-500 font-medium">
+                  ✅ Fully funded — ready to pay!
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ── Action buttons (pending) ── */}
           {exp.status === 'pending' && (
             <div className="flex gap-2 mt-3">
               <Button
@@ -212,11 +311,20 @@ export default function UpcomingPage() {
               </Button>
               <Button
                 size="sm"
-                variant="outline"
-                onClick={() => handleSkip(exp)}
+                variant={showFunds ? 'secondary' : 'outline'}
+                onClick={() => { setShowFunds((v) => !v); setShowHistory(false); }}
                 className="flex-1 h-8 rounded-lg text-xs gap-1"
               >
-                <XCircle size={13} /> Skip
+                <PiggyBank size={13} />
+                {showFunds ? 'Cancel' : 'Add Funds'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSkip(exp)}
+                className="h-8 px-2 rounded-lg text-xs gap-1"
+              >
+                <XCircle size={13} />
               </Button>
               <Button
                 size="sm"
@@ -228,6 +336,95 @@ export default function UpcomingPage() {
               </Button>
             </div>
           )}
+
+          {/* ── Add Funds panel ── */}
+          {exp.status === 'pending' && showFunds && (
+            <form
+              onSubmit={handleAddFund}
+              className="mt-3 p-3 rounded-xl bg-muted/60 border border-border space-y-2"
+            >
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                <PiggyBank size={12} className="text-primary" />
+                Add savings toward this expense
+              </p>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">৳</span>
+                  <Input
+                    type="number"
+                    placeholder="Amount"
+                    value={fundAmount}
+                    onChange={(e) => setFundAmount(e.target.value)}
+                    className="pl-7 h-9 rounded-lg text-sm"
+                    min="1"
+                    step="1"
+                    autoFocus
+                  />
+                </div>
+                <Input
+                  placeholder="Note (optional)"
+                  value={fundNote}
+                  onChange={(e) => setFundNote(e.target.value)}
+                  className="flex-1 h-9 rounded-lg text-sm"
+                />
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={fundLoading}
+                className="w-full h-8 rounded-lg text-xs gap-1"
+              >
+                {fundLoading ? 'Saving…' : '💰 Save Funds'}
+              </Button>
+            </form>
+          )}
+
+          {/* ── Contribution history ── */}
+          {contributions.length > 0 && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronRight
+                  size={12}
+                  className={cn('transition-transform', showHistory && 'rotate-90')}
+                />
+                {contributions.length} contribution{contributions.length !== 1 ? 's' : ''}
+              </button>
+
+              {showHistory && (
+                <div className="mt-2 space-y-1">
+                  {contributions.map((c) => (
+                    <div
+                      key={c._id}
+                      className="flex items-center gap-2 text-xs bg-muted/50 rounded-lg px-3 py-2"
+                    >
+                      <span className="text-emerald-500 font-semibold">+৳{c.amount.toLocaleString()}</span>
+                      <span className="text-muted-foreground flex-1 truncate">
+                        {c.note || format(new Date(c.date), 'MMM d, yyyy')}
+                      </span>
+                      <span className="text-muted-foreground shrink-0">
+                        {format(new Date(c.date), 'MMM d')}
+                      </span>
+                      {exp.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveContribution(c._id)}
+                          className="text-muted-foreground hover:text-red-500 transition-colors ml-1"
+                        >
+                          <X size={11} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Skipped actions ── */}
           {exp.status === 'skipped' && (
             <div className="flex gap-2 mt-3">
               <Button
@@ -266,16 +463,44 @@ export default function UpcomingPage() {
       {!loading && pending.length > 0 && (
         <div className="rounded-2xl p-5 bg-gradient-to-br from-primary/90 to-primary space-y-4 shadow-lg">
           {/* Big balance */}
-          <div>
-            <p className="text-primary-foreground/70 text-xs font-medium uppercase tracking-widest mb-1">
-              Total Pending
-            </p>
-            <p className="text-4xl font-extrabold text-primary-foreground tracking-tight">
-              ৳{totalPending.toLocaleString()}
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-primary-foreground/70 text-xs font-medium uppercase tracking-widest mb-1">
+                Total Pending
+              </p>
+              <p className="text-4xl font-extrabold text-primary-foreground tracking-tight">
+                ৳{totalPending.toLocaleString()}
+              </p>
+            </div>
+            {/* Saved summary */}
+            {totalSaved > 0 && (
+              <div className="text-right">
+                <p className="text-primary-foreground/70 text-xs font-medium uppercase tracking-widest mb-1">
+                  Total Saved
+                </p>
+                <p className="text-2xl font-bold text-primary-foreground/90">
+                  ৳{totalSaved.toLocaleString()}
+                </p>
+                <p className="text-[11px] text-primary-foreground/60 mt-0.5">
+                  {Math.round((totalSaved / totalPending) * 100)}% funded
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Stacked bar */}
+          {/* Overall savings progress */}
+          {totalSaved > 0 && (
+            <div className="space-y-1">
+              <div className="h-2 rounded-full bg-white/20 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-white/80 transition-all duration-500"
+                  style={{ width: `${Math.min((totalSaved / totalPending) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Stacked category bar */}
           {categoryBreakdown.length > 0 && (
             <div>
               <div className="flex rounded-full overflow-hidden h-3 gap-px">
@@ -303,10 +528,7 @@ export default function UpcomingPage() {
                     <span className="text-xs text-primary-foreground/90 font-medium">
                       {cat.name}
                     </span>
-                    <span
-                      className="text-xs font-bold"
-                      style={{ color: cat.color === '#ffffff' ? '#fff' : 'rgba(255,255,255,0.9)' }}
-                    >
+                    <span className="text-xs font-bold text-white/90">
                       ৳{cat.amount.toLocaleString()}
                     </span>
                   </div>
@@ -332,7 +554,13 @@ export default function UpcomingPage() {
                   : 'border-border text-muted-foreground hover:border-primary/50'
               )}
             >
-              {s === 'all' ? `All (${items.length})` : s === 'pending' ? `Pending (${pending.length})` : s === 'paid' ? `Paid (${paid.length})` : `Skipped (${skipped.length})`}
+              {s === 'all'
+                ? `All (${items.length})`
+                : s === 'pending'
+                ? `Pending (${pending.length})`
+                : s === 'paid'
+                ? `Paid (${paid.length})`
+                : `Skipped (${skipped.length})`}
             </button>
           ))}
         </div>

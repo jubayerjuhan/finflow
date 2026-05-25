@@ -20,4 +20,8 @@ export const upcomingService = {
   markPaid: (id: string) => api.post(`/upcoming/${id}/pay`),
   markSkipped: (id: string) =>
     api.put(`/upcoming/${id}`, { status: 'skipped' }),
+  addContribution: (id: string, amount: number, note?: string) =>
+    api.post(`/upcoming/${id}/contribute`, { amount, note }),
+  removeContribution: (id: string, contributionId: string) =>
+    api.delete(`/upcoming/${id}/contribute?contributionId=${contributionId}`),
 };

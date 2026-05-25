@@ -3,6 +3,13 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export type UpcomingStatus = 'pending' | 'paid' | 'skipped';
 export type RecurringType = 'none' | 'weekly' | 'monthly' | 'yearly';
 
+export interface IContribution {
+  _id: mongoose.Types.ObjectId;
+  amount: number;
+  date: Date;
+  note?: string;
+}
+
 export interface IUpcomingExpense extends Document {
   _id: string;
   title: string;
@@ -14,9 +21,19 @@ export interface IUpcomingExpense extends Document {
   status: UpcomingStatus;
   recurring: RecurringType;
   paidTransactionId?: mongoose.Types.ObjectId;
+  contributions: IContribution[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+const ContributionSchema = new Schema<IContribution>(
+  {
+    amount: { type: Number, required: true },
+    date: { type: Date, default: Date.now },
+    note: { type: String, trim: true },
+  },
+  { _id: true }
+);
 
 const UpcomingExpenseSchema = new Schema<IUpcomingExpense>(
   {
@@ -48,6 +65,7 @@ const UpcomingExpenseSchema = new Schema<IUpcomingExpense>(
       type: Schema.Types.ObjectId,
       ref: 'Transaction',
     },
+    contributions: { type: [ContributionSchema], default: [] },
   },
   { timestamps: true }
 );

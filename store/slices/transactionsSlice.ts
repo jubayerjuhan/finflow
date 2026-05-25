@@ -14,6 +14,7 @@ export interface Transaction {
   categoryId: { _id: string; name: string; icon: string; color: string };
   date: string;
   note?: string;
+  fee?: number;
   createdAt: string;
 }
 

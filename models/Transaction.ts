@@ -11,6 +11,7 @@ export interface ITransaction extends Document {
   categoryId: mongoose.Types.ObjectId;
   date: Date;
   note?: string;
+  fee: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +40,7 @@ const TransactionSchema = new Schema<ITransaction>(
     },
     date: { type: Date, required: true, default: Date.now },
     note: { type: String, trim: true },
+    fee: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

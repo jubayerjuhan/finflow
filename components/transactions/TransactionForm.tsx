@@ -23,12 +23,19 @@ export default function TransactionForm() {
 
   const [type, setType] = useState<TxType>('expense');
   const [amount, setAmount] = useState('');
+  const [fee, setFee] = useState('');
   const [walletId, setWalletId] = useState(wallets[0]?._id || '');
   const [toWalletId, setToWalletId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const parsedAmount = parseFloat(amount) || 0;
+  const parsedFee = parseFloat(fee) || 0;
+  const totalDeducted = type === 'income'
+    ? parsedAmount - parsedFee
+    : parsedAmount + parsedFee;
 
   const filteredCategories = categories.filter((c) => c.name !== 'Transfer');
 
@@ -62,12 +69,12 @@ export default function TransactionForm() {
             toWalletId,
             type: 'transfer',
             amount: parseFloat(amount),
+            fee: parsedFee || undefined,
             categoryId: transferCat?._id || categories[0]._id,
             date,
             note,
           })
         ).unwrap();
-        // Refresh wallets after transfer
         dispatch(fetchWallets());
       } else {
         await dispatch(
@@ -75,6 +82,7 @@ export default function TransactionForm() {
             walletId,
             type,
             amount: parseFloat(amount),
+            fee: parsedFee || undefined,
             categoryId,
             date,
             note,
@@ -128,6 +136,42 @@ export default function TransactionForm() {
           min="0"
           step="0.01"
         />
+      </div>
+
+      {/* Transaction Fee (optional) */}
+      <div className="space-y-1.5">
+        <Label className="flex items-center gap-1.5">
+          Transaction Fee
+          <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
+        </Label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground select-none">৳</span>
+          <Input
+            type="number"
+            placeholder="0.00"
+            value={fee}
+            onChange={(e) => setFee(e.target.value)}
+            className="pl-8 h-11 rounded-xl"
+            min="0"
+            step="0.01"
+          />
+        </div>
+        {/* Live total when fee is entered */}
+        {parsedFee > 0 && parsedAmount > 0 && (
+          <div className={cn(
+            'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium',
+            type === 'income' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'
+          )}>
+            <span className="text-xs text-muted-foreground">
+              {type === 'income'
+                ? `৳${parsedAmount.toLocaleString()} − fee ৳${parsedFee.toLocaleString()}`
+                : `৳${parsedAmount.toLocaleString()} + fee ৳${parsedFee.toLocaleString()}`}
+            </span>
+            <span className="font-bold">
+              Total: ৳{Math.abs(totalDeducted).toLocaleString()}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* From Wallet */}

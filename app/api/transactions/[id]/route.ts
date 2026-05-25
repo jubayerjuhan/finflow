@@ -36,10 +36,11 @@ export async function PUT(
     }
 
     // Reverse previous balance effect
+    const oldFee = existing.fee || 0;
     const oldWallet = await Wallet.findById(existing.walletId);
     if (oldWallet) {
-      if (existing.type === 'income') oldWallet.balance -= existing.amount;
-      else if (existing.type === 'expense') oldWallet.balance += existing.amount;
+      if (existing.type === 'income') oldWallet.balance -= (existing.amount - oldFee);
+      else if (existing.type === 'expense') oldWallet.balance += (existing.amount + oldFee);
       await oldWallet.save();
     }
 
@@ -47,10 +48,11 @@ export async function PUT(
     const newWalletId = body.walletId || existing.walletId;
     const newAmount = body.amount || existing.amount;
     const newType = body.type || existing.type;
+    const newFee = body.fee ?? existing.fee ?? 0;
     const newWallet = await Wallet.findById(newWalletId);
     if (newWallet) {
-      if (newType === 'income') newWallet.balance += newAmount;
-      else if (newType === 'expense') newWallet.balance -= newAmount;
+      if (newType === 'income') newWallet.balance += (newAmount - newFee);
+      else if (newType === 'expense') newWallet.balance -= (newAmount + newFee);
       await newWallet.save();
     }
 

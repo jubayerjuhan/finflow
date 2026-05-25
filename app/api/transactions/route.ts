@@ -51,18 +51,18 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { walletId, type, amount } = body;
+    const { walletId, type, amount, fee = 0 } = body;
 
     const wallet = await Wallet.findById(walletId);
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
     }
 
-    // Update wallet balance
+    // Update wallet balance — fee is always an extra cost on the source wallet
     if (type === 'income') {
-      wallet.balance += amount;
+      wallet.balance += amount - fee;
     } else if (type === 'expense') {
-      wallet.balance -= amount;
+      wallet.balance -= (amount + fee);
     }
     await wallet.save();
 

@@ -8,6 +8,7 @@ export interface TransactionPayload {
   date: string;
   note?: string;
   toWalletId?: string;
+  fee?: number;
 }
 
 export interface TransactionFilters {

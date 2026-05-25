@@ -18,11 +18,12 @@ import budgetsReducer from './slices/budgetsSlice';
 import upcomingReducer from './slices/upcomingSlice';
 import reportsReducer from './slices/reportsSlice';
 import themeReducer from './slices/themeSlice';
+import settingsReducer from './slices/settingsSlice';
 
 const persistConfig = {
   key: 'finflow-root',
   storage,
-  whitelist: ['wallets', 'categories', 'theme'], // persist wallets, categories, and theme
+  whitelist: ['wallets', 'categories', 'theme', 'settings'], // settings holds monthlyFund
 };
 
 const rootReducer = combineReducers({
@@ -33,6 +34,7 @@ const rootReducer = combineReducers({
   upcoming: upcomingReducer,
   reports: reportsReducer,
   theme: themeReducer,
+  settings: settingsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

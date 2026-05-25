@@ -284,13 +284,7 @@ export default function UpcomingPage() {
     return sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
   };
 
-  const handlePay = async (exp: UpcomingExpense) => {
-    try {
-      await dispatch(markUpcomingPaid(exp._id)).unwrap();
-      dispatch(fetchWallets());
-      toast.success(`✅ Marked "${exp.title}" as paid!`);
-    } catch { toast.error('Failed to mark as paid'); }
-  };
+  // handlePay is now inside ExpenseCard so it can access per-card wallet state
 
   const handleSkip = async (exp: UpcomingExpense) => {
     try {
@@ -326,11 +320,34 @@ export default function UpcomingPage() {
     const progressPct = exp.amount > 0 ? Math.min((savedAmount / exp.amount) * 100, 100) : 0;
     const isFullySaved = savedAmount >= exp.amount;
 
+    const wallets = useAppSelector((s) => s.wallets.items);
+
+    // Pay panel state
+    const [showPay, setShowPay] = useState(false);
+    const [payWalletId, setPayWalletId] = useState('');
+    const [payLoading, setPayLoading] = useState(false);
+
+    // Save funds panel state
     const [showFunds, setShowFunds] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [fundAmount, setFundAmount] = useState('');
     const [fundNote, setFundNote] = useState('');
     const [fundLoading, setFundLoading] = useState(false);
+
+    const handlePay = async () => {
+      if (!payWalletId) { toast.error('Select a wallet'); return; }
+      setPayLoading(true);
+      try {
+        await dispatch(markUpcomingPaid({ id: exp._id, walletId: payWalletId })).unwrap();
+        dispatch(fetchWallets());
+        toast.success(`✅ Marked "${exp.title}" as paid!`);
+        setShowPay(false);
+      } catch (e: any) {
+        toast.error(e?.message || 'Failed to mark as paid');
+      } finally {
+        setPayLoading(false);
+      }
+    };
 
     const handleAddFund = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -397,14 +414,59 @@ export default function UpcomingPage() {
 
           {exp.status === 'pending' && (
             <div className="flex gap-2 mt-3">
-              <Button size="sm" onClick={() => handlePay(exp)} className="flex-1 h-8 rounded-lg text-xs gap-1 bg-emerald-500 hover:bg-emerald-600">
-                <CheckCircle2 size={13} /> Pay Now
+              <Button
+                size="sm"
+                onClick={() => { setShowPay((v) => !v); setShowFunds(false); if (!payWalletId) setPayWalletId(exp.walletId?._id || ''); }}
+                className={cn('flex-1 h-8 rounded-lg text-xs gap-1', showPay ? 'bg-emerald-600' : 'bg-emerald-500 hover:bg-emerald-600')}
+              >
+                <CheckCircle2 size={13} /> {showPay ? 'Cancel' : 'Pay Now'}
               </Button>
-              <Button size="sm" variant={showFunds ? 'secondary' : 'outline'} onClick={() => { setShowFunds((v) => !v); setShowHistory(false); }} className="flex-1 h-8 rounded-lg text-xs gap-1">
+              <Button size="sm" variant={showFunds ? 'secondary' : 'outline'} onClick={() => { setShowFunds((v) => !v); setShowPay(false); }} className="flex-1 h-8 rounded-lg text-xs gap-1">
                 <PiggyBank size={13} />{showFunds ? 'Cancel' : 'Save Funds'}
               </Button>
               <Button size="sm" variant="outline" onClick={() => handleSkip(exp)} className="h-8 px-2 rounded-lg text-xs"><XCircle size={13} /></Button>
               <Button size="sm" variant="ghost" onClick={() => handleDelete(exp._id)} className="h-8 w-8 rounded-lg p-0 text-muted-foreground hover:text-red-500"><Trash2 size={13} /></Button>
+            </div>
+          )}
+
+          {/* Wallet picker for Pay Now */}
+          {exp.status === 'pending' && showPay && (
+            <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
+              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 size={12} /> Pay ৳{exp.amount.toLocaleString()} from which wallet?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {wallets.map((w) => (
+                  <button
+                    key={w._id}
+                    type="button"
+                    onClick={() => setPayWalletId(w._id)}
+                    className={cn(
+                      'flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all text-xs font-medium',
+                      payWalletId === w._id
+                        ? 'border-emerald-500 bg-emerald-500/10'
+                        : 'border-border hover:border-emerald-500/50'
+                    )}
+                  >
+                    <span className="w-7 h-7 rounded-lg flex items-center justify-center text-base flex-shrink-0" style={{ backgroundColor: w.color + '22' }}>
+                      {w.icon}
+                    </span>
+                    <div className="min-w-0 text-left">
+                      <p className="truncate font-semibold text-xs">{w.name}</p>
+                      <p className="text-muted-foreground text-[10px]">৳{w.balance.toLocaleString()}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                disabled={!payWalletId || payLoading}
+                onClick={handlePay}
+                className="w-full h-8 rounded-lg text-xs bg-emerald-500 hover:bg-emerald-600 gap-1"
+              >
+                <CheckCircle2 size={13} />
+                {payLoading ? 'Processing…' : `Confirm Payment`}
+              </Button>
             </div>
           )}
 

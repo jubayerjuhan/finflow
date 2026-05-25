@@ -17,7 +17,7 @@ export const upcomingService = {
   update: (id: string, data: Partial<UpcomingPayload>) =>
     api.put(`/upcoming/${id}`, data),
   delete: (id: string) => api.delete(`/upcoming/${id}`),
-  markPaid: (id: string) => api.post(`/upcoming/${id}/pay`),
+  markPaid: (id: string, walletId?: string) => api.post(`/upcoming/${id}/pay`, { walletId }),
   markSkipped: (id: string) =>
     api.put(`/upcoming/${id}`, { status: 'skipped' }),
   addContribution: (id: string, amount: number, note?: string) =>

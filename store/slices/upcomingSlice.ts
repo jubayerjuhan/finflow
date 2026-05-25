@@ -66,8 +66,8 @@ export const deleteUpcoming = createAsyncThunk(
 
 export const markUpcomingPaid = createAsyncThunk(
   'upcoming/markPaid',
-  async (id: string) => {
-    const res = await upcomingService.markPaid(id);
+  async ({ id, walletId }: { id: string; walletId?: string }) => {
+    const res = await upcomingService.markPaid(id, walletId);
     return res.data.data;
   }
 );

@@ -358,25 +358,69 @@ export default function TransactionsPage() {
                       {dayIncome  > 0 && <span className="text-emerald-500 font-medium">+৳{dayIncome.toLocaleString()}</span>}
                     </div>
                   </div>
-                  <Card className="border border-border">
+                  <Card className="border border-border overflow-hidden">
                     <CardContent className="p-0 divide-y divide-border">
-                      {txs.map((tx) => (
-                        <div key={tx._id} className="relative group">
-                          <TransactionItem transaction={tx} />
-                          {/* Fee badge */}
-                          {tx.fee && tx.fee > 0 && (
-                            <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full hidden group-hover:block">
-                              +৳{tx.fee} fee
-                            </span>
-                          )}
-                          <button
-                            onClick={() => handleDelete(tx)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 md:opacity-0 md:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition-all"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
+                      {txs.map((tx) => {
+                        const isIncome   = tx.type === 'income';
+                        const isTransfer = tx.type === 'transfer';
+                        const hasFee     = (tx.fee ?? 0) > 0;
+                        return (
+                          <div key={tx._id} className="flex items-center group hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors duration-100">
+                            {/* Left: icon */}
+                            <div className="pl-4 py-3.5 shrink-0">
+                              <div
+                                className="w-10 h-10 rounded-[10px] flex items-center justify-center text-lg"
+                                style={{ backgroundColor: (tx.categoryId?.color ?? '#8E8E93') + '1A' }}
+                              >
+                                {tx.categoryId?.icon || '📦'}
+                              </div>
+                            </div>
+
+                            {/* Middle: title + meta */}
+                            <div className="flex-1 min-w-0 px-3 py-3.5">
+                              <p className="text-[14px] font-medium truncate text-foreground leading-snug">
+                                {tx.note || tx.categoryId?.name || 'Transaction'}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[12px] text-muted-foreground">{tx.walletId?.name}</span>
+                                <span className="text-muted-foreground/40 text-[10px]">·</span>
+                                <span className="text-[12px] text-muted-foreground">{format(new Date(tx.date), 'MMM d')}</span>
+                                {isTransfer && tx.toWalletId && (
+                                  <>
+                                    <span className="text-muted-foreground/40 text-[10px]">→</span>
+                                    <span className="text-[12px] text-muted-foreground">{tx.toWalletId.name}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right: amount + fee */}
+                            <div className="flex flex-col items-end gap-0.5 py-3.5 shrink-0">
+                              <span className={cn(
+                                'text-[14px] font-semibold tracking-tight',
+                                isTransfer ? 'text-foreground'
+                                  : isIncome ? 'text-[#34C759] dark:text-[#30D158]'
+                                  : 'text-[#FF3B30] dark:text-[#FF453A]'
+                              )}>
+                                {isTransfer ? '⇄ ' : isIncome ? '+' : '−'}৳{tx.amount.toLocaleString()}
+                              </span>
+                              {hasFee && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  +৳{tx.fee} fee
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Delete button — in flow, never overlaps */}
+                            <button
+                              onClick={() => handleDelete(tx)}
+                              className="shrink-0 px-3 py-3.5 text-muted-foreground hover:text-red-500 md:opacity-0 md:group-hover:opacity-100 opacity-40 transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 </div>

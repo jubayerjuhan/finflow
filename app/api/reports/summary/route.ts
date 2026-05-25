@@ -18,13 +18,22 @@ export async function GET(req: NextRequest) {
       ? new Date(endDate + 'T23:59:59.999Z')
       : endOfMonth(new Date());
 
-    // Total income and expenses in range
+    // Total income and expenses in range (fees are included in expense totals)
     const summaryData = await Transaction.aggregate([
       { $match: { date: { $gte: start, $lte: end }, type: { $in: ['income', 'expense'] } } },
       {
         $group: {
           _id: '$type',
-          total: { $sum: '$amount' },
+          // For expenses: amount + fee; for income: amount only
+          total: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', 'expense'] },
+                { $add: ['$amount', { $ifNull: ['$fee', 0] }] },
+                '$amount',
+              ],
+            },
+          },
         },
       },
     ]);
@@ -36,13 +45,13 @@ export async function GET(req: NextRequest) {
       if (item._id === 'expense') totalExpenses = item.total;
     });
 
-    // By category (expenses)
+    // By category (expenses, fees included)
     const byCategory = await Transaction.aggregate([
       { $match: { type: 'expense', date: { $gte: start, $lte: end } } },
       {
         $group: {
           _id: '$categoryId',
-          amount: { $sum: '$amount' },
+          amount: { $sum: { $add: ['$amount', { $ifNull: ['$fee', 0] }] } },
         },
       },
       {
@@ -82,7 +91,16 @@ export async function GET(req: NextRequest) {
             month: { $month: '$date' },
             type: '$type',
           },
-          total: { $sum: '$amount' },
+          // Fees counted as part of expense totals in monthly trend
+          total: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', 'expense'] },
+                { $add: ['$amount', { $ifNull: ['$fee', 0] }] },
+                '$amount',
+              ],
+            },
+          },
         },
       },
       { $sort: { '_id.year': 1, '_id.month': 1 } },

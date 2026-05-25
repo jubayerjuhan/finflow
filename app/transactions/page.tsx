@@ -76,29 +76,32 @@ export default function TransactionsPage() {
   const hasActiveFilters = Object.values(localFilters).some(Boolean);
 
   // ── Computed stats from current items ────────────────────────────────────
+  // Fees are an additional cost on top of the base amount for expenses/transfers
+  const txTotal = (t: Transaction) => t.amount + (t.fee ?? 0);
+
   const totalIncome  = useMemo(() => items.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0), [items]);
-  const totalExpense = useMemo(() => items.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0), [items]);
+  const totalExpense = useMemo(() => items.filter((t) => t.type === 'expense').reduce((s, t) => s + txTotal(t), 0), [items]);
   const netFlow      = totalIncome - totalExpense;
 
-  // Category breakdown (expenses only)
+  // Category breakdown (expenses only, including fees)
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, { name: string; icon: string; color: string; amount: number }> = {};
     items.filter((t) => t.type === 'expense').forEach((t) => {
       const id = t.categoryId?._id || 'other';
       if (!map[id]) map[id] = { name: t.categoryId?.name || 'Other', icon: t.categoryId?.icon || '📦', color: t.categoryId?.color || '#6366f1', amount: 0 };
-      map[id].amount += t.amount;
+      map[id].amount += txTotal(t);
     });
     return Object.values(map).sort((a, b) => b.amount - a.amount).slice(0, 6);
   }, [items]);
 
-  // Bar chart: income vs expense per day (from current page)
+  // Bar chart: income vs expense per day (from current page, fees included in expense)
   const dailyData = useMemo(() => {
     const map: Record<string, { day: string; income: number; expense: number }> = {};
     items.forEach((t) => {
       const key = format(new Date(t.date), 'MMM d');
       if (!map[key]) map[key] = { day: key, income: 0, expense: 0 };
       if (t.type === 'income') map[key].income += t.amount;
-      if (t.type === 'expense') map[key].expense += t.amount;
+      if (t.type === 'expense') map[key].expense += txTotal(t);
     });
     return Object.values(map).slice(-7);
   }, [items]);

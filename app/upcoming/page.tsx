@@ -42,10 +42,12 @@ type FilterStatus = 'all' | 'pending' | 'paid' | 'skipped';
 
 // ── Fund vs Expenses Comparison Card ─────────────────────────────────────────
 function FundComparisonCard({
-  totalExpenses,
+  totalPlanned,
+  totalPaid,
   categoryBreakdown,
 }: {
-  totalExpenses: number;
+  totalPlanned: number;   // pending + paid (full plan)
+  totalPaid: number;      // already paid
   categoryBreakdown: { name: string; icon: string; color: string; amount: number }[];
 }) {
   const dispatch = useAppDispatch();
@@ -54,21 +56,24 @@ function FundComparisonCard({
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState('');
 
-  const remaining = monthlyFund - totalExpenses;
+  const totalPending = totalPlanned - totalPaid;
+  const remaining = monthlyFund - totalPlanned;
   const isOver = remaining < 0;
-  const usedPct = monthlyFund > 0 ? Math.min((totalExpenses / monthlyFund) * 100, 100) : 0;
+  const usedPct = monthlyFund > 0 ? Math.min((totalPlanned / monthlyFund) * 100, 100) : 0;
+  const paidPct = monthlyFund > 0 ? Math.min((totalPaid / monthlyFund) * 100, 100) : 0;
 
   const donutData =
     monthlyFund > 0
       ? [
-          { name: 'Expenses', value: Math.min(totalExpenses, monthlyFund) },
-          { name: isOver ? 'Over budget' : 'Remaining', value: isOver ? 0 : remaining },
-        ]
+          { name: 'Paid', value: totalPaid },
+          { name: 'Pending', value: totalPending },
+          { name: isOver ? 'Over budget' : 'Remaining', value: isOver ? 0 : Math.max(remaining, 0) },
+        ].filter(d => d.value > 0)
       : [{ name: 'No fund set', value: 1 }];
 
   const donutColors =
     monthlyFund > 0
-      ? [isOver ? '#FF3B30' : usedPct > 75 ? '#FF9500' : '#007AFF', isOver ? '#FF3B3020' : '#34C75940']
+      ? ['#34C759', isOver ? '#FF3B30' : usedPct > 75 ? '#FF9500' : '#007AFF', '#E5E5EA30']
       : ['#E5E5EA'];
 
   const handleSave = () => {
@@ -149,7 +154,10 @@ function FundComparisonCard({
                   <span className={cn('text-sm font-extrabold', isOver ? 'text-red-500' : 'text-foreground')}>
                     {Math.round(usedPct)}%
                   </span>
-                  <span className="text-[9px] text-muted-foreground">used</span>
+                  <span className="text-[9px] text-muted-foreground">planned</span>
+                  {totalPaid > 0 && (
+                    <span className="text-[9px] text-emerald-500 font-semibold">{Math.round(paidPct)}% paid</span>
+                  )}
                 </div>
               </div>
 
@@ -165,9 +173,17 @@ function FundComparisonCard({
                     <TrendingDown size={12} className={isOver ? 'text-red-500' : 'text-amber-500'} /> Planned Spend
                   </div>
                   <span className={cn('text-sm font-bold', isOver ? 'text-red-500' : 'text-foreground')}>
-                    ৳{totalExpenses.toLocaleString()}
+                    ৳{totalPlanned.toLocaleString()}
                   </span>
                 </div>
+                {totalPaid > 0 && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <CheckCircle2 size={12} className="text-emerald-500" /> Paid
+                    </div>
+                    <span className="text-sm font-bold text-emerald-500">-৳{totalPaid.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="h-px bg-border" />
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground font-medium">{isOver ? 'Over budget' : 'Remaining'}</span>
@@ -178,14 +194,26 @@ function FundComparisonCard({
               </div>
             </div>
 
-            {/* Progress bar */}
+            {/* Progress bar — two-tone: paid (green) + pending (blue/amber) */}
             <div className="px-4 pb-2 space-y-1">
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className={cn('h-full rounded-full transition-all duration-700', isOver ? 'bg-red-500' : usedPct > 75 ? 'bg-amber-400' : 'bg-primary')}
-                  style={{ width: `${usedPct}%` }}
-                />
+              <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                {totalPaid > 0 && (
+                  <div className="h-full bg-emerald-500 transition-all duration-700 rounded-l-full"
+                    style={{ width: `${paidPct}%` }} />
+                )}
+                {totalPending > 0 && (
+                  <div
+                    className={cn('h-full transition-all duration-700', totalPaid === 0 ? 'rounded-full' : 'rounded-r-full', isOver ? 'bg-red-500' : usedPct > 75 ? 'bg-amber-400' : 'bg-primary')}
+                    style={{ width: `${Math.min((totalPending / (monthlyFund || 1)) * 100, 100 - paidPct)}%` }}
+                  />
+                )}
               </div>
+              {totalPaid > 0 && (
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Paid ৳{totalPaid.toLocaleString()}</span>
+                  <span className="flex items-center gap-1"><span className={cn('w-2 h-2 rounded-full inline-block', isOver ? 'bg-red-500' : 'bg-primary')} />Pending ৳{totalPending.toLocaleString()}</span>
+                </div>
+              )}
               {isOver && (
                 <p className="text-[11px] text-red-500 font-medium">
                   ⚠️ Expenses exceed your fund by ৳{Math.abs(remaining).toLocaleString()}
@@ -244,14 +272,19 @@ export default function UpcomingPage() {
   const skipped = items.filter((u) => u.status === 'skipped');
 
   const totalPending = pending.reduce((s, u) => s + u.amount, 0);
+  const totalPaid = paid.reduce((s, u) => s + u.amount, 0);
+  const totalPlanned = totalPending + totalPaid; // full monthly plan (excludes skipped)
   const totalSaved = pending.reduce(
     (s, u) => s + (u.contributions || []).reduce((a, c) => a + c.amount, 0),
     0
   );
 
+  // Category breakdown uses ALL planned items (pending + paid) so fund comparison shows full picture
+  const allPlanned = useMemo(() => [...pending, ...paid], [pending, paid]);
+
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, { name: string; icon: string; color: string; amount: number }> = {};
-    for (const exp of pending) {
+    for (const exp of allPlanned) {
       const id = exp.categoryId?._id || 'unknown';
       if (!map[id]) {
         map[id] = { name: exp.categoryId?.name || 'Unknown', icon: exp.categoryId?.icon || '📦', color: exp.categoryId?.color || '#6366f1', amount: 0 };
@@ -259,7 +292,7 @@ export default function UpcomingPage() {
       map[id].amount += exp.amount;
     }
     return Object.values(map).sort((a, b) => b.amount - a.amount);
-  }, [pending]);
+  }, [allPlanned]);
 
   const displayedItems = useMemo(() => {
     let list = filterStatus === 'all' ? items : items.filter((u) => u.status === filterStatus);
@@ -531,7 +564,7 @@ export default function UpcomingPage() {
 
       {/* Fund vs Expenses comparison */}
       {!loading && (
-        <FundComparisonCard totalExpenses={totalPending} categoryBreakdown={categoryBreakdown} />
+        <FundComparisonCard totalPlanned={totalPlanned} totalPaid={totalPaid} categoryBreakdown={categoryBreakdown} />
       )}
 
       {/* Stats Hero Card */}

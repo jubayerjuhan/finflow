@@ -48,7 +48,7 @@ export default function DashboardPage() {
     .reduce((s, t) => s + t.amount, 0);
   const monthExpenses = currentMonthTx
     .filter((t) => t.type === 'expense')
-    .reduce((s, t) => s + t.amount, 0);
+    .reduce((s, t) => s + t.amount + (t.fee ?? 0), 0);
 
   // ── Upcoming Bills panel (rendered in both mobile flow & desktop sidebar) ──
   const upcomingPanel =

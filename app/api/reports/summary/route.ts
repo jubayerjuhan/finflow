@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
+import { getAuthUser, HttpError } from '@/lib/auth';
 import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     // Total income and expenses in range (fees are included in expense totals)
     const summaryData = await Transaction.aggregate([
-      { $match: { date: { $gte: start, $lte: end }, type: { $in: ['income', 'expense'] } } },
+      { $match: { userId: user._id, date: { $gte: start, $lte: end }, type: { $in: ['income', 'expense'] } } },
       {
         $group: {
           _id: '$type',
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     // By category (expenses, fees included)
     const byCategory = await Transaction.aggregate([
-      { $match: { type: 'expense', date: { $gte: start, $lte: end } } },
+      { $match: { userId: user._id, type: 'expense', date: { $gte: start, $lte: end } } },
       {
         $group: {
           _id: '$categoryId',
@@ -80,6 +82,7 @@ export async function GET(req: NextRequest) {
     const byMonth = await Transaction.aggregate([
       {
         $match: {
+          userId: user._id,
           date: { $gte: sixMonthsAgo },
           type: { $in: ['income', 'expense'] },
         },
@@ -135,7 +138,7 @@ export async function GET(req: NextRequest) {
       .map(([, v]) => v);
 
     // Wallet balances
-    const wallets = await Wallet.find();
+    const wallets = await Wallet.find({ userId: user._id });
     const walletBalances = wallets.map((w) => ({
       wallet: w.name,
       color: w.color,
@@ -153,6 +156,9 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Failed to fetch report' }, { status: 500 });
   }
 }

@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
+import { getAuthUser, HttpError } from '@/lib/auth';
 import Wallet from '@/models/Wallet';
 import Transaction from '@/models/Transaction';
 import Category from '@/models/Category';
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const { fromId, toId, amount, note, fee = 0 } = await req.json();
 
-    const fromWallet = await Wallet.findById(fromId);
-    const toWallet = await Wallet.findById(toId);
+    const fromWallet = await Wallet.findOne({ _id: fromId, userId: user._id });
+    const toWallet = await Wallet.findOne({ _id: toId, userId: user._id });
 
     if (!fromWallet || !toWallet) {
       return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
@@ -20,14 +22,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
     }
 
-    // Find or create a Transfer category
-    let transferCategory = await Category.findOne({ name: 'Transfer' });
+    // Find or create this user's Transfer category
+    let transferCategory = await Category.findOne({ name: 'Transfer', userId: user._id });
     if (!transferCategory) {
       transferCategory = await Category.create({
         name: 'Transfer',
-        icon: '🔄',
+        icon: 'repeat',
         color: '#6366f1',
         isDefault: true,
+        userId: user._id,
       });
     }
 
@@ -41,6 +44,7 @@ export async function POST(req: NextRequest) {
 
     // Create transfer transaction record
     await Transaction.create({
+      userId: user._id,
       walletId: fromId,
       toWalletId: toId,
       type: 'transfer',
@@ -55,6 +59,9 @@ export async function POST(req: NextRequest) {
       data: { fromWallet, toWallet },
     });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Transfer failed' }, { status: 500 });
   }
 }

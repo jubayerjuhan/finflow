@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
+import { getAuthUser, HttpError } from '@/lib/auth';
 import UpcomingExpense from '@/models/UpcomingExpense';
 import Wallet from '@/models/Wallet';
 import '@/models/Category';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
 
     const { searchParams } = new URL(req.url);
@@ -21,7 +23,7 @@ export async function GET(req: NextRequest) {
       dateFilter.$lte = end;
     }
 
-    const query: Record<string, any> = { status: 'pending' };
+    const query: Record<string, any> = { userId: user._id, status: 'pending' };
     if (Object.keys(dateFilter).length > 0) {
       query.dueDate = dateFilter;
     }
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
       .populate('categoryId', 'name icon color')
       .populate('walletId', 'name icon color balance currency');
 
-    const wallets = await Wallet.find();
+    const wallets = await Wallet.find({ userId: user._id });
 
     // Total upcoming amount
     const totalUpcoming = upcomingExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -76,6 +78,9 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Failed to fetch upcoming report' }, { status: 500 });
   }
 }

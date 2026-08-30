@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
+import { getAuthUser, HttpError } from '@/lib/auth';
 import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
 import '@/models/Category'; // register for populate('categoryId')
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const { searchParams } = new URL(req.url);
 
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    const query: any = {};
+    const query: any = { userId: user._id };
     if (walletId) query.walletId = walletId;
     if (categoryId) query.categoryId = categoryId;
     if (type) query.type = type;
@@ -42,18 +44,22 @@ export async function GET(req: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const body = await req.json();
     const { walletId, type, amount, fee = 0 } = body;
 
-    const wallet = await Wallet.findById(walletId);
+    const wallet = await Wallet.findOne({ _id: walletId, userId: user._id });
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
     }
@@ -66,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
     await wallet.save();
 
-    const transaction = await Transaction.create(body);
+    const transaction = await Transaction.create({ ...body, userId: user._id });
     const populated = await transaction.populate([
       { path: 'walletId', select: 'name color icon currency' },
       { path: 'categoryId', select: 'name icon color' },
@@ -74,6 +80,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: populated }, { status: 201 });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Failed to create transaction' }, { status: 500 });
   }
 }

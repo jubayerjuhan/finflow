@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
+import { getAuthUser, HttpError } from '@/lib/auth';
 import UpcomingExpense from '@/models/UpcomingExpense';
 import '@/models/Category';
 import '@/models/Wallet';
@@ -10,6 +11,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const { amount, note } = await req.json();
 
@@ -17,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 });
     }
 
-    const upcoming = await UpcomingExpense.findById(params.id);
+    const upcoming = await UpcomingExpense.findOne({ _id: params.id, userId: user._id });
     if (!upcoming) {
       return NextResponse.json({ error: 'Upcoming expense not found' }, { status: 404 });
     }
@@ -28,12 +30,15 @@ export async function POST(
     upcoming.contributions.push({ amount, note, date: new Date() } as any);
     await upcoming.save();
 
-    const populated = await UpcomingExpense.findById(upcoming._id)
+    const populated = await UpcomingExpense.findOne({ _id: upcoming._id, userId: user._id })
       .populate('categoryId', 'name icon color')
       .populate('walletId', 'name icon color balance currency');
 
     return NextResponse.json({ data: populated });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Failed to add contribution' }, { status: 500 });
   }
 }
@@ -44,6 +49,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const { searchParams } = new URL(req.url);
     const contributionId = searchParams.get('contributionId');
@@ -52,7 +58,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'contributionId is required' }, { status: 400 });
     }
 
-    const upcoming = await UpcomingExpense.findById(params.id);
+    const upcoming = await UpcomingExpense.findOne({ _id: params.id, userId: user._id });
     if (!upcoming) {
       return NextResponse.json({ error: 'Upcoming expense not found' }, { status: 404 });
     }
@@ -68,12 +74,15 @@ export async function DELETE(
 
     await upcoming.save();
 
-    const populated = await UpcomingExpense.findById(upcoming._id)
+    const populated = await UpcomingExpense.findOne({ _id: upcoming._id, userId: user._id })
       .populate('categoryId', 'name icon color')
       .populate('walletId', 'name icon color balance currency');
 
     return NextResponse.json({ data: populated });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Failed to remove contribution' }, { status: 500 });
   }
 }

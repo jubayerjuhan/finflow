@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IBudget extends Document {
   _id: string;
+  userId: mongoose.Types.ObjectId;
   categoryId: mongoose.Types.ObjectId;
   amount: number;
   month: string; // YYYY-MM
@@ -11,6 +12,7 @@ export interface IBudget extends Document {
 
 const BudgetSchema = new Schema<IBudget>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     categoryId: {
       type: Schema.Types.ObjectId,
       ref: 'Category',
@@ -22,7 +24,7 @@ const BudgetSchema = new Schema<IBudget>(
   { timestamps: true }
 );
 
-BudgetSchema.index({ categoryId: 1, month: 1 }, { unique: true });
+BudgetSchema.index({ userId: 1, categoryId: 1, month: 1 }, { unique: true });
 
 const Budget: Model<IBudget> =
   mongoose.models.Budget || mongoose.model<IBudget>('Budget', BudgetSchema);

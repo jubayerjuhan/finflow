@@ -2,6 +2,7 @@
 
 import { Wallet } from '@/store/slices/walletsSlice';
 import { cn } from '@/lib/utils';
+import IconGlyph from '@/components/shared/IconGlyph';
 
 interface WalletCardProps {
   wallet: Wallet;
@@ -32,7 +33,7 @@ export default function WalletCard({ wallet, isSelected, onClick }: WalletCardPr
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <span className="text-2xl">{wallet.icon}</span>
+          <IconGlyph icon={wallet.icon} size={22} className="text-white" />
           <span className="text-xs font-medium text-white/70 bg-white/20 px-2 py-0.5 rounded-full">
             {wallet.currency}
           </span>

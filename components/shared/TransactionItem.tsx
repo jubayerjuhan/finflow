@@ -4,6 +4,7 @@ import { Transaction } from '@/store/slices/transactionsSlice';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
+import IconGlyph from '@/components/shared/IconGlyph';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -29,12 +30,12 @@ export default function TransactionItem({ transaction, onEdit, onDelete }: Trans
     >
       {/* Category icon — Apple SF-symbol style circle */}
       <div
-        className="w-10 h-10 rounded-[10px] flex items-center justify-center text-lg shrink-0"
+        className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
         style={{
           backgroundColor: (category?.color ?? '#8E8E93') + '1A',
         }}
       >
-        <span>{category?.icon || '📦'}</span>
+        <IconGlyph icon={category?.icon} size={18} style={{ color: category?.color ?? '#8E8E93' }} />
       </div>
 
       {/* Info */}

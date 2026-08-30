@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
+import { getAuthUser, HttpError } from '@/lib/auth';
 import Budget from '@/models/Budget';
 import Transaction from '@/models/Transaction';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const { searchParams } = new URL(req.url);
     const month = searchParams.get('month') || format(new Date(), 'yyyy-MM');
 
-    const budgets = await Budget.find({ month }).populate(
+    const budgets = await Budget.find({ month, userId: user._id }).populate(
       'categoryId',
       'name icon color'
     );
@@ -23,6 +25,7 @@ export async function GET(req: NextRequest) {
     const spentData = await Transaction.aggregate([
       {
         $match: {
+          userId: user._id,
           type: 'expense',
           date: { $gte: start, $lte: end },
         },
@@ -46,19 +49,26 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({ data: budgetsWithSpent });
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: 'Failed to fetch budgets' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
     await connectDB();
     const body = await req.json();
-    const budget = await Budget.create(body);
+    const budget = await Budget.create({ ...body, userId: user._id });
     const populated = await budget.populate('categoryId', 'name icon color');
     return NextResponse.json({ data: populated }, { status: 201 });
   } catch (error: any) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error.code === 11000) {
       return NextResponse.json(
         { error: 'Budget for this category and month already exists' },

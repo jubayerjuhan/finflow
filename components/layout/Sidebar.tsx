@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setTheme, ThemeMode } from '@/store/slices/themeSlice';
+import AccountMenu from './AccountMenu';
 
 const navItems = [
   { href: '/dashboard',     label: 'Dashboard',    icon: LayoutDashboard },
@@ -104,6 +105,14 @@ export default function Sidebar() {
 
       {/* ── Footer ── */}
       <div className="px-3 py-4 border-t border-black/6 dark:border-white/6 space-y-3">
+        {/* Account */}
+        <div className="flex items-center gap-2 px-1">
+          <AccountMenu />
+          <span className="text-[13px] font-medium text-foreground truncate">
+            Account
+          </span>
+        </div>
+
         {/* Apple-style segmented control for theme */}
         <div className={cn(
           'flex items-center gap-0.5 rounded-xl p-1',

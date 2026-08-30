@@ -4,6 +4,7 @@ export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface ITransaction extends Document {
   _id: string;
+  userId: mongoose.Types.ObjectId;
   walletId: mongoose.Types.ObjectId;
   toWalletId?: mongoose.Types.ObjectId;
   type: TransactionType;
@@ -18,6 +19,7 @@ export interface ITransaction extends Document {
 
 const TransactionSchema = new Schema<ITransaction>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     walletId: {
       type: Schema.Types.ObjectId,
       ref: 'Wallet',

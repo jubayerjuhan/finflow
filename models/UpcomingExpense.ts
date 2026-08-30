@@ -12,6 +12,7 @@ export interface IContribution {
 
 export interface IUpcomingExpense extends Document {
   _id: string;
+  userId: mongoose.Types.ObjectId;
   title: string;
   amount: number;
   categoryId: mongoose.Types.ObjectId;
@@ -37,6 +38,7 @@ const ContributionSchema = new Schema<IContribution>(
 
 const UpcomingExpenseSchema = new Schema<IUpcomingExpense>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     title: { type: String, required: true, trim: true },
     amount: { type: Number, required: true },
     categoryId: {

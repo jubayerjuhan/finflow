@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchWallets,
@@ -30,15 +30,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus, Trash2, Wallet as WalletIcon, Tag, RefreshCcw, Sun, Moon, Monitor,
-  Smile, Palette, Banknote, Settings2, Database,
+  Shapes, Palette, Banknote, Settings2, Database,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { setTheme, ThemeMode } from '@/store/slices/themeSlice';
+import { WALLET_ICON_KEYS, CATEGORY_ICON_KEYS, IconKey } from '@/lib/iconRegistry';
+import IconGlyph from '@/components/shared/IconGlyph';
+import IconPicker from '@/components/shared/IconPicker';
 
-const WALLET_ICONS = ['💵', '🏦', '📱', '💳', '💰', '🏧', '💎', '🪙', '👛', '🏪', '💸', '🤑'];
 const WALLET_COLORS = ['#22c55e', '#3b82f6', '#e91e8c', '#f97316', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f59e0b', '#ef4444'];
-const CATEGORY_ICONS = ['🍔', '🚌', '🛍️', '💊', '🎬', '🏠', '💰', '📚', '⚡', '📦', '✈️', '🎁', '💇', '🐾', '🎮', '☕', '🍕', '🏋️', '🎓', '🚗', '🏥', '🛒', '📺', '🎵'];
 const CATEGORY_COLORS = ['#f97316', '#3b82f6', '#ec4899', '#22c55e', '#a855f7', '#06b6d4', '#84cc16', '#f59e0b', '#64748b', '#6366f1', '#ef4444', '#10b981'];
 
 export default function SettingsPage() {
@@ -53,19 +54,17 @@ export default function SettingsPage() {
 
   // Wallet form
   const [wName, setWName] = useState('');
-  const [wIcon, setWIcon] = useState('💳');
+  const [wIcon, setWIcon] = useState<IconKey>('card');
   const [wColor, setWColor] = useState('#6366f1');
   const [wCurrency, setWCurrency] = useState('BDT');
   const [wBalance, setWBalance] = useState('0');
   const [wSaving, setWSaving] = useState(false);
-  const wIconInputRef = useRef<HTMLInputElement>(null);
 
   // Category form
   const [cName, setCName] = useState('');
-  const [cIcon, setCIcon] = useState('📦');
+  const [cIcon, setCIcon] = useState<IconKey>('package');
   const [cColor, setCColor] = useState('#6366f1');
   const [cSaving, setCSaving] = useState(false);
-  const cIconInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     dispatch(fetchWallets());
@@ -86,7 +85,7 @@ export default function SettingsPage() {
       })).unwrap();
       toast.success('Wallet created!');
       setWalletDialog(false);
-      setWName(''); setWIcon('💳'); setWColor('#6366f1'); setWBalance('0');
+      setWName(''); setWIcon('card'); setWColor('#6366f1'); setWBalance('0');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to create wallet');
     } finally {
@@ -116,7 +115,7 @@ export default function SettingsPage() {
       })).unwrap();
       toast.success('Category created!');
       setCategoryDialog(false);
-      setCName(''); setCIcon('📦'); setCColor('#6366f1');
+      setCName(''); setCIcon('package'); setCColor('#6366f1');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to create category');
     } finally {
@@ -148,12 +147,6 @@ export default function SettingsPage() {
     } finally {
       setReseeding(false);
     }
-  };
-
-  // Emoji input helper — extract first emoji/char from typed input
-  const extractEmoji = (val: string) => {
-    const segments = [...new Intl.Segmenter().segment(val)];
-    return segments[0]?.segment ?? val[0] ?? '';
   };
 
   return (
@@ -197,10 +190,10 @@ export default function SettingsPage() {
               <Card key={wallet._id} className="border border-border">
                 <CardContent className="p-3 flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: wallet.color }}
                   >
-                    {wallet.icon}
+                    <IconGlyph icon={wallet.icon} size={19} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{wallet.name}</p>
@@ -236,10 +229,10 @@ export default function SettingsPage() {
               <Card key={cat._id} className="border border-border">
                 <CardContent className="p-3 flex items-center gap-2">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: cat.color + '22', border: `1.5px solid ${cat.color}44` }}
                   >
-                    {cat.icon}
+                    <IconGlyph icon={cat.icon} size={17} style={{ color: cat.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-xs truncate">{cat.name}</p>
@@ -275,11 +268,11 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-3 gap-3">
                   {(
                     [
-                      { mode: 'light' as ThemeMode, icon: Sun, label: 'Light', desc: 'Always light', emoji: '☀️' },
-                      { mode: 'system' as ThemeMode, icon: Monitor, label: 'System', desc: 'Follow device', emoji: '💻' },
-                      { mode: 'dark' as ThemeMode, icon: Moon, label: 'Dark', desc: 'Always dark', emoji: '🌙' },
+                      { mode: 'light' as ThemeMode, icon: Sun, label: 'Light', desc: 'Always light' },
+                      { mode: 'system' as ThemeMode, icon: Monitor, label: 'System', desc: 'Follow device' },
+                      { mode: 'dark' as ThemeMode, icon: Moon, label: 'Dark', desc: 'Always dark' },
                     ] as const
-                  ).map(({ mode, icon: Icon, label, desc, emoji }) => (
+                  ).map(({ mode, icon: Icon, label, desc }) => (
                     <button
                       key={mode}
                       onClick={() => dispatch(setTheme(mode))}
@@ -290,7 +283,7 @@ export default function SettingsPage() {
                           : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
                       )}
                     >
-                      <span className="text-2xl">{emoji}</span>
+                      <Icon size={24} />
                       <div className="text-center">
                         <p className="text-xs font-semibold">{label}</p>
                         <p className="text-[10px] opacity-70">{desc}</p>
@@ -361,55 +354,16 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Emoji Picker for Wallet Icon */}
+              {/* Icon Picker for Wallet */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
-                  <Smile size={13} className="text-primary" /> Icon
-                  <span className="text-xs text-muted-foreground font-normal ml-1">— type, paste or use your emoji keyboard</span>
+                  <Shapes size={13} className="text-primary" /> Icon
                 </Label>
-
-                {/* Big emoji display + free input */}
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => wIconInputRef.current?.focus()}
-                    className="w-14 h-14 rounded-2xl border-2 border-primary bg-primary/5 text-3xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
-                  >
-                    {wIcon}
-                  </button>
-                  <div className="flex-1">
-                    <Input
-                      ref={wIconInputRef}
-                      value={wIcon}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) setWIcon(extractEmoji(val));
-                      }}
-                      className="rounded-xl text-center text-lg font-bold h-11"
-                      placeholder="Type or paste any emoji"
-                      maxLength={8}
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                      💡 Mac: Ctrl+Cmd+Space · Windows: Win+.
-                    </p>
+                  <div className="w-14 h-14 rounded-2xl border-2 border-primary bg-primary/5 flex items-center justify-center flex-shrink-0">
+                    <IconGlyph icon={wIcon} size={26} className="text-primary" />
                   </div>
-                </div>
-
-                {/* Quick picks */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {WALLET_ICONS.map((icon) => (
-                    <button
-                      key={icon}
-                      type="button"
-                      onClick={() => setWIcon(icon)}
-                      className={cn(
-                        'w-10 h-10 rounded-xl text-xl border-2 transition-all hover:scale-110',
-                        wIcon === icon ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
-                      )}
-                    >
-                      {icon}
-                    </button>
-                  ))}
+                  <IconPicker keys={WALLET_ICON_KEYS} value={wIcon} onChange={setWIcon} />
                 </div>
               </div>
 
@@ -460,7 +414,7 @@ export default function SettingsPage() {
                 className="rounded-2xl p-4 flex items-center gap-3"
                 style={{ backgroundColor: wColor }}
               >
-                <span className="text-2xl">{wIcon}</span>
+                <IconGlyph icon={wIcon} size={22} className="text-white" />
                 <div>
                   <p className="text-white text-sm font-medium">{wName || 'Wallet Name'}</p>
                   <p className="text-white/70 text-xs">৳{parseFloat(wBalance || '0').toLocaleString()}</p>
@@ -495,56 +449,19 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Emoji Picker for Category Icon */}
+              {/* Icon Picker for Category */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
-                  <Smile size={13} className="text-primary" /> Icon
-                  <span className="text-xs text-muted-foreground font-normal ml-1">— any emoji you like!</span>
+                  <Shapes size={13} className="text-primary" /> Icon
                 </Label>
-
-                {/* Big emoji display + free input */}
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => cIconInputRef.current?.focus()}
-                    className="w-14 h-14 rounded-2xl border-2 border-primary bg-primary/5 text-3xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+                  <div
+                    className="w-14 h-14 rounded-2xl border-2 flex items-center justify-center flex-shrink-0"
                     style={{ borderColor: cColor + '88', backgroundColor: cColor + '15' }}
                   >
-                    {cIcon}
-                  </button>
-                  <div className="flex-1">
-                    <Input
-                      ref={cIconInputRef}
-                      value={cIcon}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) setCIcon(extractEmoji(val));
-                      }}
-                      className="rounded-xl text-center text-lg font-bold h-11"
-                      placeholder="Type or paste any emoji"
-                      maxLength={8}
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                      💡 Mac: Ctrl+Cmd+Space · Windows: Win+.
-                    </p>
+                    <IconGlyph icon={cIcon} size={26} style={{ color: cColor }} />
                   </div>
-                </div>
-
-                {/* Quick picks */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {CATEGORY_ICONS.map((icon) => (
-                    <button
-                      key={icon}
-                      type="button"
-                      onClick={() => setCIcon(icon)}
-                      className={cn(
-                        'w-10 h-10 rounded-xl text-xl border-2 transition-all hover:scale-110',
-                        cIcon === icon ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
-                      )}
-                    >
-                      {icon}
-                    </button>
-                  ))}
+                  <IconPicker keys={CATEGORY_ICON_KEYS} value={cIcon} onChange={setCIcon} />
                 </div>
               </div>
 
@@ -573,7 +490,7 @@ export default function SettingsPage() {
                 className="rounded-xl p-3 flex items-center gap-3 border-2"
                 style={{ borderColor: cColor + '44', backgroundColor: cColor + '11' }}
               >
-                <span className="text-2xl">{cIcon}</span>
+                <IconGlyph icon={cIcon} size={20} style={{ color: cColor }} />
                 <p className="font-medium text-sm">{cName || 'Category Name'}</p>
               </div>
 

@@ -28,7 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Skeleton } from '@/components/shared/LoadingSkeleton';
+import { BudgetCardSkeleton } from '@/components/shared/LoadingSkeleton';
+import EmptyState from '@/components/shared/EmptyState';
+import EmptyBudgetIllustration from '@/components/shared/illustrations/EmptyBudgetIllustration';
+import IconGlyph from '@/components/shared/IconGlyph';
 import { Plus, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -142,7 +145,7 @@ export default function BudgetsPage() {
                           : 'border-border hover:border-primary/50'
                       )}
                     >
-                      <span className="text-xl">{cat.icon}</span>
+                      <IconGlyph icon={cat.icon} size={18} />
                       <span className="truncate w-full text-center text-[10px]">{cat.name}</span>
                     </button>
                   ))}
@@ -205,14 +208,14 @@ export default function BudgetsPage() {
       {/* Budget list */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
+          {[1, 2, 3, 4].map((i) => <BudgetCardSkeleton key={i} />)}
         </div>
       ) : budgets.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-4xl mb-3">🎯</p>
-          <p className="font-medium">No budgets yet</p>
-          <p className="text-sm mt-1">Tap + to set spending limits</p>
-        </div>
+        <EmptyState
+          illustration={<EmptyBudgetIllustration />}
+          title="No budgets yet"
+          description="Tap + to set a spending limit for a category."
+        />
       ) : (
         <div className="space-y-3">
           {budgets.map((budget) => {
@@ -226,10 +229,10 @@ export default function BudgetsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ backgroundColor: cat?.color + '22' }}
                     >
-                      {cat?.icon}
+                      <IconGlyph icon={cat?.icon} size={18} style={{ color: cat?.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

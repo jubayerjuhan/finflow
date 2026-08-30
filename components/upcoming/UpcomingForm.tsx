@@ -22,7 +22,12 @@ import {
   DollarSign,
   FileText,
   CheckCircle2,
+  CalendarDays,
+  CalendarClock,
+  CalendarRange,
 } from 'lucide-react';
+import IconGlyph from '@/components/shared/IconGlyph';
+import { Skeleton } from '@/components/shared/LoadingSkeleton';
 
 export default function UpcomingForm() {
   const dispatch = useAppDispatch();
@@ -76,10 +81,10 @@ export default function UpcomingForm() {
   };
 
   const recurringOptions = [
-    { value: 'none', label: 'Once', icon: '1️⃣' },
-    { value: 'weekly', label: 'Weekly', icon: '📅' },
-    { value: 'monthly', label: 'Monthly', icon: '🗓️' },
-    { value: 'yearly', label: 'Yearly', icon: '📆' },
+    { value: 'none', label: 'Once', icon: Calendar },
+    { value: 'weekly', label: 'Weekly', icon: CalendarDays },
+    { value: 'monthly', label: 'Monthly', icon: CalendarClock },
+    { value: 'yearly', label: 'Yearly', icon: CalendarRange },
   ] as const;
 
   return (
@@ -125,7 +130,6 @@ export default function UpcomingForm() {
           {categoryId && (
             <span className="ml-2 text-xs text-primary font-normal flex items-center gap-1">
               <CheckCircle2 size={11} />
-              {filteredCategories.find((c) => c._id === categoryId)?.icon}{' '}
               {filteredCategories.find((c) => c._id === categoryId)?.name}
             </span>
           )}
@@ -133,7 +137,7 @@ export default function UpcomingForm() {
         {categoriesLoading && filteredCategories.length === 0 ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+              <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
         ) : filteredCategories.length === 0 ? (
@@ -153,10 +157,10 @@ export default function UpcomingForm() {
                 )}
               >
                 <span
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: cat.color + '22' }}
                 >
-                  {cat.icon}
+                  <IconGlyph icon={cat.icon} size={17} style={{ color: cat.color }} />
                 </span>
                 <span className="truncate w-full text-center text-[10px] leading-tight">{cat.name}</span>
               </button>
@@ -173,7 +177,7 @@ export default function UpcomingForm() {
         {walletsLoading && wallets.length === 0 ? (
           <div className="grid grid-cols-2 gap-2">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+              <Skeleton key={i} className="h-20 w-full" />
             ))}
           </div>
         ) : (
@@ -191,10 +195,10 @@ export default function UpcomingForm() {
                 )}
               >
                 <span
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: w.color + '22' }}
                 >
-                  {w.icon}
+                  <IconGlyph icon={w.icon} size={15} style={{ color: w.color }} />
                 </span>
                 <div className="min-w-0 text-left">
                   <p className="truncate font-semibold text-xs">{w.name}</p>
@@ -237,7 +241,7 @@ export default function UpcomingForm() {
                   : 'border-border text-muted-foreground hover:border-primary/50'
               )}
             >
-              <span>{r.icon}</span>
+              <r.icon size={14} />
               <span>{r.label}</span>
             </button>
           ))}

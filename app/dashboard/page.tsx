@@ -15,6 +15,9 @@ import Link from 'next/link';
 import { Plus, ArrowRight, CalendarClock, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import EmptyState from '@/components/shared/EmptyState';
+import EmptyTransactionsIllustration from '@/components/shared/illustrations/EmptyTransactionsIllustration';
+import IconGlyph from '@/components/shared/IconGlyph';
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
@@ -73,7 +76,12 @@ export default function DashboardPage() {
               const isUrgent = daysLeft <= 2 && !isOverdue;
               return (
                 <div key={exp._id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="text-xl">{exp.categoryId?.icon}</span>
+                  <span
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: (exp.categoryId?.color ?? '#8E8E93') + '22' }}
+                  >
+                    <IconGlyph icon={exp.categoryId?.icon} size={16} style={{ color: exp.categoryId?.color ?? '#8E8E93' }} />
+                  </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{exp.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -218,14 +226,12 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 ) : recentTransactions.length === 0 ? (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <p className="text-sm">No transactions yet</p>
-                    <Link href="/transactions/new">
-                      <Button variant="link" size="sm" className="mt-1">
-                        Add your first one
-                      </Button>
-                    </Link>
-                  </div>
+                  <EmptyState
+                    illustration={<EmptyTransactionsIllustration />}
+                    title="No transactions yet"
+                    action={{ label: 'Add your first one', href: '/transactions/new' }}
+                    className="py-10"
+                  />
                 ) : (
                   <div className="divide-y divide-border">
                     {recentTransactions.map((tx) => (

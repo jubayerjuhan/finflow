@@ -7,7 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/shared/LoadingSkeleton';
+import { Skeleton, ReportChartSkeleton } from '@/components/shared/LoadingSkeleton';
+import EmptyState from '@/components/shared/EmptyState';
+import EmptyChartIllustration from '@/components/shared/illustrations/EmptyChartIllustration';
+import EmptyUpcomingIllustration from '@/components/shared/illustrations/EmptyUpcomingIllustration';
+import EmptyBudgetIllustration from '@/components/shared/illustrations/EmptyBudgetIllustration';
+import EmptyWalletIllustration from '@/components/shared/illustrations/EmptyWalletIllustration';
+import IconGlyph from '@/components/shared/IconGlyph';
 import {
   BarChart,
   Bar,
@@ -221,9 +227,9 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent className="px-2 pb-4">
               {loading ? (
-                <Skeleton className="h-52 w-full" />
+                <ReportChartSkeleton className="h-52" />
               ) : !summary?.byCategory?.length ? (
-                <p className="text-center text-muted-foreground text-sm py-8">No expense data</p>
+                <EmptyState illustration={<EmptyChartIllustration />} title="No expense data" />
               ) : (
                 <>
                   <ResponsiveContainer width="100%" height={220}>
@@ -249,7 +255,9 @@ export default function ReportsPage() {
                   <div className="space-y-2.5 mt-2 px-2">
                     {summary.byCategory.map((cat, i) => (
                       <div key={i} className="flex items-center gap-3">
-                        <span className="w-5 text-center flex-shrink-0">{cat.icon}</span>
+                        <span className="w-5 flex items-center justify-center flex-shrink-0">
+                          <IconGlyph icon={cat.icon} size={14} style={{ color: cat.color }} />
+                        </span>
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all"
@@ -330,7 +338,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent className="px-2 pb-4">
               {!upcomingReport?.byCategory?.length ? (
-                <p className="text-center text-muted-foreground text-sm py-6">No pending upcoming expenses</p>
+                <EmptyState illustration={<EmptyUpcomingIllustration />} title="No pending upcoming expenses" className="py-6" />
               ) : (
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={upcomingReport.byCategory} layout="vertical">
@@ -355,7 +363,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent className="px-2 pb-4">
               {!upcomingReport?.projectedBalances?.length ? (
-                <p className="text-center text-muted-foreground text-sm py-6">No data</p>
+                <EmptyState illustration={<EmptyWalletIllustration />} title="No data" className="py-6" />
               ) : (
                 <>
                   <ResponsiveContainer width="100%" height={180}>
@@ -424,7 +432,7 @@ function BudgetsReport() {
         {loading ? (
           <Skeleton className="h-52 w-full" />
         ) : !chartData.length ? (
-          <p className="text-center text-muted-foreground text-sm py-8">No budgets set for this month</p>
+          <EmptyState illustration={<EmptyBudgetIllustration />} title="No budgets set for this month" className="py-8" />
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} layout="vertical" barGap={2}>

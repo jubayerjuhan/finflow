@@ -24,16 +24,21 @@ import {
   ArrowUpDown, ChevronUp, ChevronDown,
   PiggyBank, ChevronRight, X,
   Pencil, TrendingUp, TrendingDown, Wallet,
+  Repeat,
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import EmptyState from '@/components/shared/EmptyState';
+import EmptyUpcomingIllustration from '@/components/shared/illustrations/EmptyUpcomingIllustration';
+import IconGlyph from '@/components/shared/IconGlyph';
+import { UpcomingCardSkeleton } from '@/components/shared/LoadingSkeleton';
 
 const RECURRING_LABELS: Record<string, string> = {
   none: '',
-  weekly: '🔁 Weekly',
-  monthly: '🔁 Monthly',
-  yearly: '🔁 Yearly',
+  weekly: 'Weekly',
+  monthly: 'Monthly',
+  yearly: 'Yearly',
 };
 
 type SortKey = 'dueDate' | 'amount';
@@ -215,8 +220,8 @@ function FundComparisonCard({
                 </div>
               )}
               {isOver && (
-                <p className="text-[11px] text-red-500 font-medium">
-                  ⚠️ Expenses exceed your fund by ৳{Math.abs(remaining).toLocaleString()}
+                <p className="text-[11px] text-red-500 font-medium inline-flex items-center gap-1">
+                  <TrendingDown size={11} /> Expenses exceed your fund by ৳{Math.abs(remaining).toLocaleString()}
                 </p>
               )}
             </div>
@@ -231,7 +236,7 @@ function FundComparisonCard({
                     <div key={i} className="space-y-0.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1.5">
-                          <span>{cat.icon}</span>
+                          <IconGlyph icon={cat.icon} size={13} style={{ color: cat.color }} />
                           <span className="text-muted-foreground">{cat.name}</span>
                         </span>
                         <div className="flex items-center gap-2">
@@ -287,7 +292,7 @@ export default function UpcomingPage() {
     for (const exp of allPlanned) {
       const id = exp.categoryId?._id || 'unknown';
       if (!map[id]) {
-        map[id] = { name: exp.categoryId?.name || 'Unknown', icon: exp.categoryId?.icon || '📦', color: exp.categoryId?.color || '#6366f1', amount: 0 };
+        map[id] = { name: exp.categoryId?.name || 'Unknown', icon: exp.categoryId?.icon || 'package', color: exp.categoryId?.color || '#6366f1', amount: 0 };
       }
       map[id].amount += exp.amount;
     }
@@ -373,7 +378,7 @@ export default function UpcomingPage() {
       try {
         await dispatch(markUpcomingPaid({ id: exp._id, walletId: payWalletId })).unwrap();
         dispatch(fetchWallets());
-        toast.success(`✅ Marked "${exp.title}" as paid!`);
+        toast.success(`Marked "${exp.title}" as paid!`);
         setShowPay(false);
       } catch (e: any) {
         toast.error(e?.message || 'Failed to mark as paid');
@@ -389,7 +394,7 @@ export default function UpcomingPage() {
       setFundLoading(true);
       try {
         await dispatch(addContribution({ id: exp._id, amount: amt, note: fundNote.trim() || undefined })).unwrap();
-        toast.success(`💰 Added ৳${amt.toLocaleString()} to "${exp.title}"`);
+        toast.success(`Added ৳${amt.toLocaleString()} to "${exp.title}"`);
         setFundAmount(''); setFundNote(''); setShowFunds(false);
       } catch { toast.error('Failed to add funds'); }
       finally { setFundLoading(false); }
@@ -406,18 +411,24 @@ export default function UpcomingPage() {
       <Card className={cn('border transition-all', isOverdue && exp.status === 'pending' && 'border-red-500/40 bg-red-500/5', isUrgent && !isOverdue && exp.status === 'pending' && 'border-amber-500/40 bg-amber-500/5')}>
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: exp.categoryId?.color + '22' }}>
-              {exp.categoryId?.icon}
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: exp.categoryId?.color + '22' }}>
+              <IconGlyph icon={exp.categoryId?.icon} size={19} style={{ color: exp.categoryId?.color }} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-semibold text-sm">{exp.title}</p>
-                {exp.recurring !== 'none' && <span className="text-[10px] text-muted-foreground">{RECURRING_LABELS[exp.recurring]}</span>}
+                {exp.recurring !== 'none' && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                    <Repeat size={10} />{RECURRING_LABELS[exp.recurring]}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <span className="text-xs text-muted-foreground">{format(new Date(exp.dueDate), 'MMM d, yyyy')}</span>
                 <span className="text-muted-foreground/40 text-xs">•</span>
-                <span className="text-xs text-muted-foreground">{exp.walletId?.icon} {exp.walletId?.name}</span>
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <IconGlyph icon={exp.walletId?.icon} size={11} />{exp.walletId?.name}
+                </span>
               </div>
               {exp.note && <p className="text-xs text-muted-foreground mt-1 italic">{exp.note}</p>}
             </div>
@@ -441,7 +452,11 @@ export default function UpcomingPage() {
               <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div className={cn('h-full rounded-full transition-all duration-500', isFullySaved ? 'bg-emerald-500' : progressPct >= 50 ? 'bg-primary' : 'bg-amber-400')} style={{ width: `${progressPct}%` }} />
               </div>
-              {isFullySaved && <p className="text-[11px] text-emerald-500 font-medium">✅ Fully funded — ready to pay!</p>}
+              {isFullySaved && (
+                <p className="text-[11px] text-emerald-500 font-medium inline-flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Fully funded — ready to pay!
+                </p>
+              )}
             </div>
           )}
 
@@ -481,8 +496,8 @@ export default function UpcomingPage() {
                         : 'border-border hover:border-emerald-500/50'
                     )}
                   >
-                    <span className="w-7 h-7 rounded-lg flex items-center justify-center text-base flex-shrink-0" style={{ backgroundColor: w.color + '22' }}>
-                      {w.icon}
+                    <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: w.color + '22' }}>
+                      <IconGlyph icon={w.icon} size={14} style={{ color: w.color }} />
                     </span>
                     <div className="min-w-0 text-left">
                       <p className="truncate font-semibold text-xs">{w.name}</p>
@@ -513,7 +528,9 @@ export default function UpcomingPage() {
                 </div>
                 <Input placeholder="Note (optional)" value={fundNote} onChange={(e) => setFundNote(e.target.value)} className="flex-1 h-9 rounded-lg text-sm" />
               </div>
-              <Button type="submit" size="sm" disabled={fundLoading} className="w-full h-8 rounded-lg text-xs gap-1">{fundLoading ? 'Saving…' : '💰 Save Funds'}</Button>
+              <Button type="submit" size="sm" disabled={fundLoading} className="w-full h-8 rounded-lg text-xs gap-1">
+                {fundLoading ? 'Saving…' : (<><PiggyBank size={13} /> Save Funds</>)}
+              </Button>
             </form>
           )}
 
@@ -598,7 +615,7 @@ export default function UpcomingPage() {
               <div className="flex flex-wrap gap-2 mt-3">
                 {categoryBreakdown.map((cat, i) => (
                   <div key={i} className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-2.5 py-1">
-                    <span className="text-xs">{cat.icon}</span>
+                    <IconGlyph icon={cat.icon} size={12} className="text-white/90" />
                     <span className="text-xs text-primary-foreground/90 font-medium">{cat.name}</span>
                     <span className="text-xs font-bold text-white/90">৳{cat.amount.toLocaleString()}</span>
                   </div>
@@ -630,11 +647,15 @@ export default function UpcomingPage() {
 
       {/* List */}
       {loading ? (
-        <div className="space-y-2">{[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />)}</div>
+        <div className="space-y-2">{[1, 2, 3].map((i) => <UpcomingCardSkeleton key={i} />)}</div>
       ) : filterStatus !== 'all' ? (
         <div className="space-y-3">
           {displayedItems.length === 0 ? (
-            <Card className="border-dashed"><CardContent className="text-center py-8 text-muted-foreground"><p>No {filterStatus} expenses</p>{filterStatus === 'pending' && <Link href="/upcoming/new"><Button variant="link" size="sm">Add one</Button></Link>}</CardContent></Card>
+            <EmptyState
+              illustration={<EmptyUpcomingIllustration />}
+              title={`No ${filterStatus} expenses`}
+              action={filterStatus === 'pending' ? { label: 'Add one', href: '/upcoming/new' } : undefined}
+            />
           ) : displayedItems.map((exp) => <ExpenseCard key={exp._id} exp={exp} />)}
         </div>
       ) : (
@@ -642,7 +663,11 @@ export default function UpcomingPage() {
           <section>
             <h2 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Pending ({groupedByStatus!.pending.length})</h2>
             {groupedByStatus!.pending.length === 0 ? (
-              <Card className="border-dashed"><CardContent className="text-center py-8 text-muted-foreground"><p>No upcoming expenses 🎉</p><Link href="/upcoming/new"><Button variant="link" size="sm">Add one</Button></Link></CardContent></Card>
+              <EmptyState
+                illustration={<EmptyUpcomingIllustration />}
+                title="No upcoming expenses"
+                action={{ label: 'Add one', href: '/upcoming/new' }}
+              />
             ) : (
               <div className="space-y-3">{groupedByStatus!.pending.map((exp) => <ExpenseCard key={exp._id} exp={exp} />)}</div>
             )}

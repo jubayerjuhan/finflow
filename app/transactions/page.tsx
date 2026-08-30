@@ -10,6 +10,9 @@ import {
 } from '@/store/slices/transactionsSlice';
 import TransactionItem from '@/components/shared/TransactionItem';
 import { TransactionSkeleton } from '@/components/shared/LoadingSkeleton';
+import EmptyState from '@/components/shared/EmptyState';
+import EmptyTransactionsIllustration from '@/components/shared/illustrations/EmptyTransactionsIllustration';
+import IconGlyph from '@/components/shared/IconGlyph';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -88,7 +91,7 @@ export default function TransactionsPage() {
     const map: Record<string, { name: string; icon: string; color: string; amount: number }> = {};
     items.filter((t) => t.type === 'expense').forEach((t) => {
       const id = t.categoryId?._id || 'other';
-      if (!map[id]) map[id] = { name: t.categoryId?.name || 'Other', icon: t.categoryId?.icon || '📦', color: t.categoryId?.color || '#6366f1', amount: 0 };
+      if (!map[id]) map[id] = { name: t.categoryId?.name || 'Other', icon: t.categoryId?.icon || 'package', color: t.categoryId?.color || '#6366f1', amount: 0 };
       map[id].amount += txTotal(t);
     });
     return Object.values(map).sort((a, b) => b.amount - a.amount).slice(0, 6);
@@ -194,8 +197,8 @@ export default function TransactionsPage() {
                 )}
               </div>
               <div className="flex justify-between text-[10px] text-primary-foreground/60">
-                <span>🟢 Income</span>
-                <span>🔴 Expenses</span>
+                <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />Income</span>
+                <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />Expenses</span>
               </div>
             </div>
           )}
@@ -223,7 +226,7 @@ export default function TransactionsPage() {
                 <div className="flex-1 space-y-1.5 min-w-0">
                   {categoryBreakdown.map((cat, i) => (
                     <div key={i} className="flex items-center gap-1.5 text-xs">
-                      <span className="text-sm">{cat.icon}</span>
+                      <IconGlyph icon={cat.icon} size={14} style={{ color: cat.color }} />
                       <span className="text-muted-foreground truncate flex-1">{cat.name}</span>
                       <span className="font-semibold shrink-0">৳{cat.amount.toLocaleString()}</span>
                     </div>
@@ -294,7 +297,11 @@ export default function TransactionsPage() {
                   <SelectTrigger className="rounded-lg h-9"><SelectValue placeholder="All wallets" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Wallets</SelectItem>
-                    {wallets.map((w) => <SelectItem key={w._id} value={w._id}>{w.icon} {w.name}</SelectItem>)}
+                    {wallets.map((w) => (
+                      <SelectItem key={w._id} value={w._id}>
+                        <span className="inline-flex items-center gap-1.5"><IconGlyph icon={w.icon} size={13} />{w.name}</span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -304,7 +311,11 @@ export default function TransactionsPage() {
                   <SelectTrigger className="rounded-lg h-9"><SelectValue placeholder="All categories" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((c) => <SelectItem key={c._id} value={c._id}>{c.icon} {c.name}</SelectItem>)}
+                    {categories.map((c) => (
+                      <SelectItem key={c._id} value={c._id}>
+                        <span className="inline-flex items-center gap-1.5"><IconGlyph icon={c.icon} size={13} />{c.name}</span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -337,11 +348,12 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
       ) : items.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-4xl mb-3">💸</p>
-          <p className="font-medium">No transactions found</p>
-          <Link href="/transactions/new"><Button variant="link" className="mt-2">Add one now</Button></Link>
-        </div>
+        <EmptyState
+          illustration={<EmptyTransactionsIllustration />}
+          title="No transactions found"
+          description="Try adjusting your filters, or add your first transaction."
+          action={{ label: 'Add one now', href: '/transactions/new' }}
+        />
       ) : (
         <div className="space-y-4">
           {Object.entries(grouped)
@@ -372,10 +384,10 @@ export default function TransactionsPage() {
                             {/* Left: icon */}
                             <div className="pl-4 py-3.5 shrink-0">
                               <div
-                                className="w-10 h-10 rounded-[10px] flex items-center justify-center text-lg"
+                                className="w-10 h-10 rounded-[10px] flex items-center justify-center"
                                 style={{ backgroundColor: (tx.categoryId?.color ?? '#8E8E93') + '1A' }}
                               >
-                                {tx.categoryId?.icon || '📦'}
+                                <IconGlyph icon={tx.categoryId?.icon} size={18} style={{ color: tx.categoryId?.color ?? '#8E8E93' }} />
                               </div>
                             </div>
 
